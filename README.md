@@ -3,6 +3,7 @@ A lightweight MQTT server
 A lightweight MQTT server that will keep running for the duration of your Android application using the Paho Java MQTT Client. 
 
 Use LMAX for message queue 
+
 Use MapDB to store in flight messages
 
 Feature
