@@ -11,7 +11,7 @@
 
 	<artifactId>server</artifactId>
 	<packaging>jar</packaging>
-	<name>Simple Program Interface</name>
+	<name>LMS Server</name>
 	<dependencies>
 		<dependency>
 			<groupId>org.mockito</groupId>

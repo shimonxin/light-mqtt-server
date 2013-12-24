@@ -11,7 +11,7 @@
 
 	<artifactId>bridge</artifactId>
 	<packaging>jar</packaging>
-	<name>Simple Program Interface</name>
+	<name>Broker Bridge</name>
 	<dependencies>
 		<dependency>
 			<groupId>org.mockito</groupId>
