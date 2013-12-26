@@ -5,13 +5,13 @@
 	<parent>
 		<relativePath>../</relativePath>
 		<artifactId>lms</artifactId>
-		<groupId>org.shimonxin</groupId>
+		<groupId>com.github.shimonxin</groupId>
 		<version>0.1</version>
 	</parent>
 
-	<artifactId>bridge</artifactId>
+	<artifactId>lms-cluster</artifactId>
 	<packaging>jar</packaging>
-	<name>Broker Bridge</name>
+	<name>LMS Cluster</name>
 	<dependencies>
 		<dependency>
 			<groupId>org.mockito</groupId>

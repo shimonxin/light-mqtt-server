@@ -5,13 +5,13 @@
 	<parent>
 		<relativePath>../</relativePath>
 		<artifactId>lms</artifactId>
-		<groupId>org.shimonxin</groupId>
+		<groupId>com.github.shimonxin</groupId>
 		<version>0.1</version>
 	</parent>
 
-	<artifactId>spi</artifactId>
+	<artifactId>lms-server</artifactId>
 	<packaging>jar</packaging>
-	<name>Simple Program Interface</name>
+	<name>LMS Server</name>
 	<dependencies>
 		<dependency>
 			<groupId>org.mockito</groupId>
