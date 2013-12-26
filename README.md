@@ -6,7 +6,7 @@ Use LMAX for message queue.
 
 Use MapDB to store in flight messages.
 
-Use Netty for IO.
+Use Netty for IO (based on moquette-mqtt writen by andrea).
 
 Feature
 ----

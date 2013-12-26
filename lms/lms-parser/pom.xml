@@ -5,14 +5,25 @@
 	<parent>
 		<relativePath>../</relativePath>
 		<artifactId>lms</artifactId>
-		<groupId>org.shimonxin</groupId>
+		<groupId>com.github.shimonxin</groupId>
 		<version>0.1</version>
 	</parent>
 
-	<artifactId>cluster</artifactId>
+	<artifactId>lms-parser</artifactId>
 	<packaging>jar</packaging>
-	<name>LMS Cluster</name>
+	<name>Message Parser (netty)</name>
 	<dependencies>
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-all</artifactId>
+			<version>4.0.11.Final</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>1.6.4</version>
+		</dependency>
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
