@@ -22,12 +22,9 @@ public abstract class AbstractMessage {
     public static final byte PINGRESP = 13; //PING Response
     public static final byte DISCONNECT = 14; //Client is Disconnecting
 
-    public static enum QOSType {
-        MOST_ONE, LEAST_ONE, EXACTLY_ONCE, RESERVED;
-    }
     //type
     protected boolean m_dupFlag;
-    protected QOSType m_qos;
+    protected QoS m_qos;
     protected boolean m_retainFlag;
     protected int m_remainingLength;
     protected byte m_messageType;
@@ -48,11 +45,11 @@ public abstract class AbstractMessage {
         this.m_dupFlag = dupFlag;
     }
 
-    public QOSType getQos() {
+    public QoS getQos() {
         return m_qos;
     }
 
-    public void setQos(QOSType qos) {
+    public void setQos(QoS qos) {
         this.m_qos = qos;
     }
 

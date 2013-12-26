@@ -6,7 +6,7 @@ import io.netty.handler.codec.CorruptedFrameException;
 
 import java.util.List;
 
-import com.github.shimonxin.lms.proto.AbstractMessage;
+import com.github.shimonxin.lms.proto.QoS;
 import com.github.shimonxin.lms.proto.UnsubscribeMessage;
 
 /**
@@ -26,7 +26,7 @@ class UnsubscribeDecoder extends DemuxDecoder {
         }
         
         //check qos level
-        if (message.getQos() != AbstractMessage.QOSType.LEAST_ONE) {
+        if (message.getQos() != QoS.LEAST_ONE) {
             throw new CorruptedFrameException("Found an Usubscribe message with qos other than LEAST_ONE, was: " + message.getQos());
         }
             

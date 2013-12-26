@@ -5,9 +5,8 @@ import io.netty.channel.ChannelHandlerContext;
 
 import java.util.List;
 
-import com.github.shimonxin.lms.proto.AbstractMessage;
+import com.github.shimonxin.lms.proto.QoS;
 import com.github.shimonxin.lms.proto.SubAckMessage;
-
 /**
  *
  * @author andrea
@@ -36,7 +35,7 @@ class SubAckDecoder extends DemuxDecoder {
         }
         for (int i = 0; i < remainingLength; i++) {
             byte qos = in.readByte();
-            message.addType(AbstractMessage.QOSType.values()[qos]);
+            message.addType(QoS.values()[qos]);
         }
         
         out.add(message);

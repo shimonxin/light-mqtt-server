@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
 import com.github.shimonxin.lms.proto.AbstractMessage;
+import com.github.shimonxin.lms.proto.QoS;
 import com.github.shimonxin.lms.proto.SubAckMessage;
 
 /**
@@ -20,7 +21,7 @@ class SubAckEncoder extends DemuxEncoder<SubAckMessage> {
 
         ByteBuf variableHeaderBuff = chc.alloc().buffer(4);
         variableHeaderBuff.writeShort(message.getMessageID());
-        for (AbstractMessage.QOSType c : message.types()) {
+        for (QoS  c : message.types()) {
             variableHeaderBuff.writeByte(c.ordinal());
         }
 
