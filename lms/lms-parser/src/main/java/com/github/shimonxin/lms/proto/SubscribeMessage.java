@@ -32,7 +32,7 @@ public class SubscribeMessage extends MessageIDMessage {
     public SubscribeMessage() {
         //Subscribe has always QoS 1
         m_messageType = AbstractMessage.SUBSCRIBE;
-        m_qos = AbstractMessage.QOSType.LEAST_ONE;
+        m_qos = QoS.LEAST_ONE;
     }
     
     public List<Couple> subscriptions() {

@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
 import com.github.shimonxin.lms.proto.AbstractMessage;
+import com.github.shimonxin.lms.proto.QoS;
 import com.github.shimonxin.lms.proto.SubscribeMessage;
 
 /**
@@ -18,7 +19,7 @@ class SubscribeEncoder extends DemuxEncoder<SubscribeMessage> {
             throw new IllegalArgumentException("Found a subscribe message with empty topics");
         }
 
-        if (message.getQos() != AbstractMessage.QOSType.LEAST_ONE) {
+        if (message.getQos() != QoS.LEAST_ONE) {
             throw new IllegalArgumentException("Expected a message with QOS 1, found " + message.getQos());
         }
         

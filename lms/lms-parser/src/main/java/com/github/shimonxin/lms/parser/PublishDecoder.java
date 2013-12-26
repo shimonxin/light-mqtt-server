@@ -8,8 +8,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.shimonxin.lms.proto.AbstractMessage;
 import com.github.shimonxin.lms.proto.PublishMessage;
+import com.github.shimonxin.lms.proto.QoS;
 
 /**
  *
@@ -42,8 +42,8 @@ class PublishDecoder extends DemuxDecoder {
         }
         message.setTopicName(topic);
         
-        if (message.getQos() == AbstractMessage.QOSType.LEAST_ONE || 
-                message.getQos() == AbstractMessage.QOSType.EXACTLY_ONCE) {
+        if (message.getQos() == QoS.LEAST_ONE || 
+                message.getQos() == QoS.EXACTLY_ONCE) {
             message.setMessageID(in.readUnsignedShort());
         }
         int stopPos = in.readerIndex();

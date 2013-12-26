@@ -7,8 +7,8 @@ import io.netty.handler.codec.CorruptedFrameException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 
+import com.github.shimonxin.lms.proto.QoS;
 import com.github.shimonxin.lms.proto.SubscribeMessage;
-import com.github.shimonxin.lms.proto.AbstractMessage.QOSType;
 
 /**
  *
@@ -27,7 +27,7 @@ class SubscribeDecoder extends DemuxDecoder {
         }
         
         //check qos level
-        if (message.getQos() != QOSType.LEAST_ONE) {
+        if (message.getQos() != QoS.LEAST_ONE) {
             throw new CorruptedFrameException("Received Subscribe message with QoS other than LEAST_ONE, was: " + message.getQos());
         }
             

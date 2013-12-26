@@ -6,7 +6,7 @@ import io.netty.channel.ChannelHandlerContext;
 import java.util.List;
 
 import com.github.shimonxin.lms.proto.AbstractMessage;
-
+import com.github.shimonxin.lms.proto.QoS;
 /**
  *
  * @author andrea
@@ -31,7 +31,7 @@ abstract class DemuxDecoder {
 
         message.setMessageType(messageType);
         message.setDupFlag(dupFlag);
-        message.setQos(AbstractMessage.QOSType.values()[qosLevel]);
+        message.setQos(QoS.values()[qosLevel]);
         message.setRetainFlag(retainFlag);
         message.setRemainingLength(remainingLength);
         return true;
