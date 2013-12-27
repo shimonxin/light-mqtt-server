@@ -1,21 +1,21 @@
 package com.github.shimonxin.lms.spi.subscriptions;
 
-class Token {
+public class Token {
 
-    static final Token EMPTY = new Token("");
-    static final Token MULTI = new Token("#");
-    static final Token SINGLE = new Token("+");
+	public static final Token EMPTY = new Token("");
+	public static final Token MULTI = new Token("#");
+	public static final Token SINGLE = new Token("+");
     String name;
 
-    protected Token(String s) {
+    public Token(String s) {
         name = s;
     }
 
-    protected String name() {
+    public String name() {
         return name;
     }
 
-    protected boolean match(Token t) {
+    public boolean match(Token t) {
         if (t == MULTI || t == SINGLE) {
             return false;
         }

@@ -1,7 +1,7 @@
 package com.github.shimonxin.lms.spi.messaging;
 
 import com.github.shimonxin.lms.proto.AbstractMessage;
-import com.github.shimonxin.lms.spi.ServerChannel;
+import com.github.shimonxin.lms.spi.session.ServerChannel;
 
 /**
  * 

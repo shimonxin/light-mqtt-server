@@ -5,8 +5,8 @@ package com.github.shimonxin.lms.spi.store;
 
 import java.util.Collection;
 
-import com.github.shimonxin.lms.spi.MatchingCondition;
 import com.github.shimonxin.lms.spi.events.PublishEvent;
+import com.github.shimonxin.lms.spi.subscriptions.MatchingCondition;
 
 /**
  * retained message store

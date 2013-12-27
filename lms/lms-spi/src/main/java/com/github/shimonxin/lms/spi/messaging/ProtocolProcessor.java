@@ -6,8 +6,8 @@ package com.github.shimonxin.lms.spi.messaging;
 import com.github.shimonxin.lms.proto.ConnectMessage;
 import com.github.shimonxin.lms.proto.SubscribeMessage;
 import com.github.shimonxin.lms.proto.UnsubscribeMessage;
-import com.github.shimonxin.lms.spi.ServerChannel;
 import com.github.shimonxin.lms.spi.events.PublishEvent;
+import com.github.shimonxin.lms.spi.session.ServerChannel;
 
 /**
  * Protocol Processor
@@ -22,12 +22,13 @@ public interface ProtocolProcessor {
 	 * start initialization
 	 */
 	void processInit();
+
 	/**
 	 * 
 	 * start stop
 	 */
 	void processStop();
-	
+
 	/**
 	 * 
 	 * process connect
@@ -39,28 +40,12 @@ public interface ProtocolProcessor {
 
 	/**
 	 * 
-	 * process publish
+	 * process inbound publish
 	 * 
+	 * @param session
 	 * @param evt
 	 */
 	void processPublish(PublishEvent evt);
-
-	// Receive a message of QoS 1
-	/**
-	 * 
-	 * process publish QoS 1
-	 * 
-	 * @param evt
-	 */
-	void processPublishQoS1(PublishEvent evt);
-
-	/**
-	 * 
-	 * send publish ack
-	 * 
-	 * @param evt
-	 */
-	void sendPubAck(String clientID, int messageID);
 
 	// Send a message of QoS 1
 	/**
@@ -72,24 +57,6 @@ public interface ProtocolProcessor {
 	 */
 	void processPubAck(String clientID, int messageID);
 
-	// Receive a message of QoS 2
-	/**
-	 * 
-	 * process publish QoS 2
-	 * 
-	 * @param evt
-	 */
-	void processPublishQoS2(PublishEvent evt);
-
-	/**
-	 * 
-	 * send publish rec
-	 * 
-	 * @param clientID
-	 * @param messageID
-	 */
-	void sendPubRec(String clientID, int messageID);
-
 	/**
 	 * 
 	 * process publish rel
@@ -97,16 +64,7 @@ public interface ProtocolProcessor {
 	 * @param clientID
 	 * @param messageID
 	 */
-	void processPubRel(String clientID, int messageID);
-
-	/**
-	 * 
-	 * send pub comp
-	 * 
-	 * @param clientID
-	 * @param messageID
-	 */
-	void sendPubComp(String clientID, int messageID);
+	void processPubRel(ServerChannel session, int messageID);
 
 	// Send a message of QoS 2
 	/**
@@ -116,7 +74,7 @@ public interface ProtocolProcessor {
 	 * @param clientID
 	 * @param messageID
 	 */
-	void processPubRec(String clientID, int messageID);
+	void processPubRec(ServerChannel session, int messageID);
 
 	/**
 	 * 
@@ -125,7 +83,7 @@ public interface ProtocolProcessor {
 	 * @param clientID
 	 * @param messageID
 	 */
-	void processPubComp(String clientID, int messageID);
+	void processPubComp(ServerChannel session, int messageID);
 
 	/**
 	 * 
@@ -152,11 +110,12 @@ public interface ProtocolProcessor {
 	 * @param msg
 	 */
 	void processSubscribe(ServerChannel session, SubscribeMessage msg);
-	
+
 	/**
 	 * 
 	 * process ping
+	 * 
 	 * @param clientID
 	 */
-	void processPing(String clientID);
+	void processPing(ServerChannel session);
 }

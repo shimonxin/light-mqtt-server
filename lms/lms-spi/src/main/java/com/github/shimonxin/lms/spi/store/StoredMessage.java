@@ -13,7 +13,7 @@ public class StoredMessage implements Serializable {
 	byte[] m_payload;
 	String m_topic;
 
-	StoredMessage(byte[] message, QoS qos, String topic) {
+	public StoredMessage(byte[] message, QoS qos, String topic) {
 		m_qos = qos;
 		m_payload = message;
 		m_topic = topic;

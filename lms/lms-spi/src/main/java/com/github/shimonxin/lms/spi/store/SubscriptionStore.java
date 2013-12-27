@@ -57,20 +57,22 @@ public interface SubscriptionStore {
 	 * @param clientID
 	 */
 	void removeSubscription(String topic, String clientID);
+
 	/**
 	 * 
 	 * add subscription
+	 * 
 	 * @param newSubscription
 	 */
 	void add(Subscription newSubscription);
+
 	/**
 	 * 
-	 * TODO SubscriptionStore.matchTopics comment
-	 * @param key
-	 * @param topic
+	 * Verify if the 2 topics matching respecting the rules of MQTT Appendix A
+	 * 
+	 * @param msgTopic
+	 * @param subscriptionTopic
 	 * @return
 	 */
-	boolean isSubscribed(String key, String topic);
-
-	boolean matchTopics(String key, String topic);
+	boolean matchTopics(String msgTopic, String subscriptionTopic);
 }

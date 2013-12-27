@@ -49,4 +49,10 @@ public interface PersistMessageStore {
 	 * @param messageID
 	 */
 	void removePersistedPublish(String clientID, int messageID);
+	/**
+	 * 
+	 * persisted Publish Events for future
+	 * @param newPublishEvts
+	 */
+	void persistedPublishsForFuture(List<PublishEvent> newPublishEvts);
 }
