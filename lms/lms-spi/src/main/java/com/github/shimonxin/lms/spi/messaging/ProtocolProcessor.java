@@ -118,4 +118,10 @@ public interface ProtocolProcessor {
 	 * @param clientID
 	 */
 	void processPing(ServerChannel session);
+	/**
+	 * 
+	 * connection lost
+	 * @param clientID
+	 */
+	void proccessConnectionLost(String clientID);
 }

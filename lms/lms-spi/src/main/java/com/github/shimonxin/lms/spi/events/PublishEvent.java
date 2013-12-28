@@ -1,6 +1,7 @@
 package com.github.shimonxin.lms.spi.events;
 
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 
 import com.github.shimonxin.lms.proto.QoS;
 import com.github.shimonxin.lms.spi.session.ServerChannel;
@@ -18,7 +19,7 @@ public class PublishEvent extends MessagingEvent implements Serializable {
 	private static final long serialVersionUID = -2813326819401898446L;
 	String m_topic;
     QoS m_qos;
-    byte[] m_message;
+    ByteBuffer m_message;
     boolean m_retain;
     String m_clientID;
     //Optional attribute, available only fo QoS 1 and 2
@@ -28,7 +29,7 @@ public class PublishEvent extends MessagingEvent implements Serializable {
     
     long timestamp;
     
-    public PublishEvent(String topic, QoS qos, byte[] message, boolean retain,
+    public PublishEvent(String topic, QoS qos, ByteBuffer message, boolean retain,
             String clientID, ServerChannel session) {
         m_topic = topic;
         m_qos = qos;
@@ -38,7 +39,7 @@ public class PublishEvent extends MessagingEvent implements Serializable {
         m_session = session;
     }
 
-    public PublishEvent(String topic, QoS qos, byte[] message, boolean retain,
+    public PublishEvent(String topic, QoS qos, ByteBuffer message, boolean retain,
                         String clientID, int msgID, ServerChannel session) {
         this(topic, qos, message, retain, clientID, session);
         m_msgID = msgID;
@@ -52,7 +53,7 @@ public class PublishEvent extends MessagingEvent implements Serializable {
         return m_qos;
     }
 
-    public byte[] getMessage() {
+    public ByteBuffer getMessage() {
         return m_message;
     }
 

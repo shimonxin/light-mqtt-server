@@ -57,7 +57,7 @@ public class RetainedMessageStoreMapDB implements RetainedMessageStore {
 	 */
 	@Override
 	public void storeRetained(PublishEvent evt) {
-		if (evt.getMessage().length == 0) {
+		if (evt.getMessage().remaining() == 0) {
 			// clean the message from topic
 			m_retainedStore.remove(evt.getTopic());
 		} else {

@@ -3,8 +3,11 @@
  */
 package com.github.shimonxin.lms.spi.messaging.impl;
 
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +25,8 @@ import com.github.shimonxin.lms.proto.SubscribeMessage;
 import com.github.shimonxin.lms.proto.UnsubAckMessage;
 import com.github.shimonxin.lms.proto.UnsubscribeMessage;
 import com.github.shimonxin.lms.spi.Authenticator;
+import com.github.shimonxin.lms.spi.events.MessagingEvent;
+import com.github.shimonxin.lms.spi.events.OutputMessagingEvent;
 import com.github.shimonxin.lms.spi.events.PublishEvent;
 import com.github.shimonxin.lms.spi.messaging.ProtocolProcessor;
 import com.github.shimonxin.lms.spi.session.ServerChannel;
@@ -35,6 +40,10 @@ import com.github.shimonxin.lms.spi.store.StoredMessage;
 import com.github.shimonxin.lms.spi.store.SubscriptionStore;
 import com.github.shimonxin.lms.spi.subscriptions.MatchingCondition;
 import com.github.shimonxin.lms.spi.subscriptions.Subscription;
+import com.lmax.disruptor.BatchEventProcessor;
+import com.lmax.disruptor.EventHandler;
+import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.SequenceBarrier;
 
 /**
  * 
@@ -42,7 +51,7 @@ import com.github.shimonxin.lms.spi.subscriptions.Subscription;
  * @created 2013-12-26
  * 
  */
-public class MqttV3ProtocalProcessor implements ProtocolProcessor {
+public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<ValueEvent> {
 	private static final Logger LOG = LoggerFactory.getLogger(MqttV3ProtocalProcessor.class);
 	InflightMessageStore inflightMessageStore;
 	PersistMessageStore persistMessageStore;
@@ -52,17 +61,31 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor {
 	SessionManger sessionManger;
 	boolean forceLogin;
 
+	private ExecutorService m_executor;
+	BatchEventProcessor<ValueEvent> m_eventProcessor;
+	private RingBuffer<ValueEvent> m_ringBuffer;
+
 	@Override
 	public void processInit() {
 		inflightMessageStore.init();
 		persistMessageStore.init();
 		retainedMessageStore.init();
 		subscriptionStore.init();
+		// init the output ringbuffer
+		m_executor = Executors.newFixedThreadPool(1);
+
+		m_ringBuffer = new RingBuffer<ValueEvent>(ValueEvent.EVENT_FACTORY, 1024 * 32);
+
+		SequenceBarrier barrier = m_ringBuffer.newBarrier();
+		m_eventProcessor = new BatchEventProcessor<ValueEvent>(m_ringBuffer, barrier, this);
+		// TODO in a presentation is said to don't do the followinf line!!
+		m_ringBuffer.setGatingSequences(m_eventProcessor.getSequence());
+		m_executor.submit(m_eventProcessor);
 	}
 
 	@Override
 	public void processConnect(ServerChannel session, ConnectMessage msg) {
-		LOG.info("processConnect for client " + msg.getClientID());
+		LOG.debug("processConnect for client {}", msg.getClientID());
 		if (msg.getProcotolVersion() != 0x03) {
 			ConnAckMessage badProto = new ConnAckMessage();
 			badProto.setReturnCode(ConnAckMessage.UNNACEPTABLE_PROTOCOL_VERSION);
@@ -79,7 +102,6 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor {
 			return;
 		}
 
-		// client ID can not greater than 64 characters
 		if (msg.getClientID() == null || msg.getClientID().length() > 23) {
 			ConnAckMessage okResp = new ConnAckMessage();
 			okResp.setReturnCode(ConnAckMessage.IDENTIFIER_REJECTED);
@@ -113,6 +135,7 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor {
 			}
 		}
 		int keepAlive = msg.getKeepAlive();
+		LOG.debug("Connect with keepAlive {} s", keepAlive);
 		SessionDescriptor connDescr = new SessionDescriptor(msg.getUsername(), msg.getClientID(), session, msg.isCleanSession(), keepAlive);
 		sessionManger.put(msg.getClientID(), connDescr);
 		session.setAttribute(SessionConstants.KEEP_ALIVE, keepAlive);
@@ -124,7 +147,9 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor {
 		// Handle will flag
 		if (msg.isWillFlag()) {
 			QoS willQos = QoS.values()[msg.getWillQos()];
-			PublishEvent pubEvt = new PublishEvent(msg.getWillTopic(), willQos, msg.getWillMessage().getBytes(), msg.isWillRetain(), msg.getClientID(), session);
+			byte[] willPayload = msg.getWillMessage().getBytes();
+			ByteBuffer bb = (ByteBuffer) ByteBuffer.allocate(willPayload.length).put(willPayload).flip();
+			PublishEvent pubEvt = new PublishEvent(msg.getWillTopic(), willQos, bb, msg.isWillRetain(), msg.getClientID(), session);
 			processPublish(pubEvt);
 		}
 
@@ -182,7 +207,7 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor {
 
 	@Override
 	public void processPublish(PublishEvent evt) {
-		LOG.debug("processPublish invoked with " + evt);
+		LOG.trace("PUB --PUBLISH--> SRV processPublish invoked with {}", evt);
 		final QoS qos = evt.getQos();
 		if (qos == QoS.RESERVED) {
 			LOG.error("not support QoS reserved");
@@ -193,7 +218,8 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor {
 		Integer messageID = evt.getMessageID();
 		boolean retain = evt.isRetain();
 		final String topic = evt.getTopic();
-		final byte[] message = evt.getMessage();
+		final ByteBuffer message = evt.getMessage();
+
 		String publishKey = String.format("%s%d", clientID, messageID);
 		if (qos == QoS.MOST_ONE) {
 			publish2Subscribers(topic, qos, message, retain, messageID);
@@ -204,13 +230,15 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor {
 			inflightMessageStore.cleanInFlightInbound(publishKey);
 			PubAckMessage pubAckMessage = new PubAckMessage();
 			pubAckMessage.setMessageID(messageID);
-			session.write(pubAckMessage);
+			disruptorPublish(new OutputMessagingEvent(session, pubAckMessage));
+			LOG.debug("replying with PubAck to MSG ID {}", evt.getMessageID());
 		} else if (qos == QoS.EXACTLY_ONCE) {
 			// store the temporary message
 			inflightMessageStore.addInFlightInbound(evt);
 			PubRecMessage pubRecMessage = new PubRecMessage();
 			pubRecMessage.setMessageID(messageID);
-			session.write(pubRecMessage);
+			disruptorPublish(new OutputMessagingEvent(session, pubRecMessage));
+			LOG.debug("replying with PubRec to MSG ID {}", evt.getMessageID());
 		}
 		if (retain) {
 			retainedMessageStore.storeRetained(evt);
@@ -220,7 +248,7 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor {
 	/**
 	 * Flood the subscribers with the message to notify. MessageID is optional and should only used for QoS 1 and 2
 	 * */
-	private void publish2Subscribers(String topic, QoS qos, byte[] message, boolean retain, Integer messageID) {
+	private void publish2Subscribers(String topic, QoS qos, ByteBuffer message, boolean retain, Integer messageID) {
 		LOG.debug("publish2Subscribers republishing to existing subscribers that matches the topic " + topic);
 		for (final Subscription sub : subscriptionStore.searchTopicSubscriptions(topic)) {
 			LOG.debug("found matching subscription on topic " + sub.getTopic());
@@ -238,7 +266,7 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor {
 					} else {
 						inflightMessageStore.addInFlightOutbound(newPublishEvt);
 						// publish
-						sendPublish(sub.getClientId(), topic, qos, message, false);
+						sendPublish(sub.getClientId(), topic, qos, message, false, messageID, false);
 					}
 				}
 			} else {
@@ -251,18 +279,22 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor {
 		}
 	}
 
-	private void sendPublish(String clientId, String topic, QoS qos, byte[] message, boolean retained) {
-		sendPublish(clientId, topic, qos, message, retained, 0, false);
+	private void sendPublish(String clientId, String topic, QoS qos, ByteBuffer message, boolean retained) {
+		// TODO pay attention to the message ID can't be 0 and it's the message sent to subscriber
+		int messageID = 1;
+		sendPublish(clientId, topic, qos, message, retained, messageID, false);
 	}
 
-	private void sendPublish(String clientId, String topic, QoS qos, byte[] message, boolean retained, int messageID, boolean dupFlag) {
-		LOG.debug("notify invoked with event ");
+	private void sendPublish(String clientId, String topic, QoS qos, ByteBuffer message, boolean retained, int messageID, boolean dupFlag) {
+		// LOG.debug("sendPublish invoked clientId <{}> on topic <{}> QoS {} ratained {} messageID {}", clientId, topic, qos, retained, messageID);
 		PublishMessage pubMessage = new PublishMessage();
 		pubMessage.setDupFlag(dupFlag);
 		pubMessage.setRetainFlag(retained);
 		pubMessage.setTopicName(topic);
 		pubMessage.setQos(qos);
 		pubMessage.setPayload(message);
+		LOG.info("send publish message to <{}> on topic <{}>", clientId, topic);
+		LOG.debug("content <{}>", new String(message.array()));
 		if (pubMessage.getQos() != QoS.MOST_ONE) {
 			pubMessage.setMessageID(messageID);
 		}
@@ -277,7 +309,6 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor {
 	 * @param msg
 	 */
 	private void sendMessageToClient(String clientID, PublishMessage pubMessage) {
-		LOG.debug(String.format("send publish message to client %s : %d %s", clientID, pubMessage.getMessageID(), pubMessage.getQos().name()));
 		try {
 			if (sessionManger.isEmpty()) {
 				throw new RuntimeException("Internal bad error, found m_clientIDs to null while it should be initialized, somewhere it's overwritten!!");
@@ -286,7 +317,7 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor {
 			if (sessionDescr == null) {
 				throw new RuntimeException(String.format("Can't find a SessionDescriptor for client %s ", clientID));
 			}
-			sessionDescr.getSession().write(pubMessage);
+			disruptorPublish(new OutputMessagingEvent(sessionDescr.getSession(), pubMessage));
 		} catch (Throwable t) {
 			LOG.error("send publish message to client error", t);
 			// TODO QoS 1 2 Persist ?
@@ -315,7 +346,7 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor {
 		}
 		PubCompMessage pubCompMessage = new PubCompMessage();
 		pubCompMessage.setMessageID(messageID);
-		session.write(pubCompMessage);
+		disruptorPublish(new OutputMessagingEvent(session, pubCompMessage));
 	}
 
 	@Override
@@ -325,7 +356,8 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor {
 		LOG.debug(String.format("processPubRec invoked for clientID %s ad messageID %d", clientID, messageID));
 		PubRelMessage pubRelMessage = new PubRelMessage();
 		pubRelMessage.setMessageID(messageID);
-		session.write(pubRelMessage);
+		pubRelMessage.setQos(QoS.LEAST_ONE);
+		disruptorPublish(new OutputMessagingEvent(session, pubRelMessage));
 	}
 
 	@Override
@@ -351,13 +383,24 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor {
 		session.close();
 		// de-activate the subscriptions for this ClientID
 		subscriptionStore.deactivate(clientID);
+		LOG.info("Disconnected client <{}> with clean session {}", clientID, cleanSession);
+	}
+
+	public void proccessConnectionLost(String clientID) {
+		// If already removed a disconnect message was already processed for this clientID
+		if (sessionManger.remove(clientID) != null) {
+			// de-activate the subscriptions for this ClientID
+			subscriptionStore.deactivate(clientID);
+			LOG.info("Lost connection with client <{}>", clientID);
+		}
 	}
 
 	@Override
 	public void processUnsubscribe(ServerChannel session, UnsubscribeMessage msg) {
-		LOG.debug("processSubscribe invoked");
+		String clientID = (String) session.getAttribute(SessionConstants.ATTR_CLIENTID);
+		LOG.debug("processUnsubscribe invoked, removing subscription on topics {}, for clientID <{}>", msg.topics(), clientID);
 		for (String topic : msg.topics()) {
-			subscriptionStore.removeSubscription(topic, (String) session.getAttribute(SessionConstants.ATTR_CLIENTID));
+			subscriptionStore.removeSubscription(topic, clientID);
 		}
 		// ack the client
 		UnsubAckMessage ackMessage = new UnsubAckMessage();
@@ -370,7 +413,7 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor {
 	public void processSubscribe(ServerChannel session, SubscribeMessage msg) {
 		boolean cleanSession = (Boolean) session.getAttribute(SessionConstants.CLEAN_SESSION);
 		String clientID = (String) session.getAttribute(SessionConstants.ATTR_CLIENTID);
-		LOG.info(String.format("processSubscribe invoked from client %s with msgID %d", clientID, msg.getMessageID()));
+		LOG.debug("processSubscribe invoked from client {} with msgID {}", clientID, msg.getMessageID());
 		for (SubscribeMessage.Couple req : msg.subscriptions()) {
 			QoS qos = QoS.values()[req.getQos()];
 			Subscription newSubscription = new Subscription(clientID, req.getTopic(), qos, cleanSession);
@@ -399,18 +442,6 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor {
 			LOG.debug("send publish message for topic " + topic);
 			sendPublish(newSubscription.getClientId(), storedMsg.getTopic(), storedMsg.getQos(), storedMsg.getPayload(), true);
 		}
-	}
-
-	public void setInflightMessageStore(InflightMessageStore inflightMessageStore) {
-		this.inflightMessageStore = inflightMessageStore;
-	}
-
-	public void setRetainedMessageStore(RetainedMessageStore retainedMessageStore) {
-		this.retainedMessageStore = retainedMessageStore;
-	}
-
-	public void setSubscriptionStore(SubscriptionStore subscriptionStore) {
-		this.subscriptionStore = subscriptionStore;
 	}
 
 	@Override
@@ -446,6 +477,35 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor {
 		persistMessageStore.stop();
 		retainedMessageStore.stop();
 		subscriptionStore.stop();
+	}
+
+	private void disruptorPublish(OutputMessagingEvent msgEvent) {
+		LOG.debug("disruptorPublish publishing event on output {}", msgEvent);
+		long sequence = m_ringBuffer.next();
+		ValueEvent event = m_ringBuffer.get(sequence);
+
+		event.setEvent(msgEvent);
+
+		m_ringBuffer.publish(sequence);
+	}
+
+	public void onEvent(ValueEvent t, long l, boolean bln) throws Exception {
+		MessagingEvent evt = t.getEvent();
+		// It's always of type OutputMessagingEvent
+		OutputMessagingEvent outEvent = (OutputMessagingEvent) evt;
+		outEvent.getChannel().write(outEvent.getMessage());
+	}
+
+	public void setInflightMessageStore(InflightMessageStore inflightMessageStore) {
+		this.inflightMessageStore = inflightMessageStore;
+	}
+
+	public void setRetainedMessageStore(RetainedMessageStore retainedMessageStore) {
+		this.retainedMessageStore = retainedMessageStore;
+	}
+
+	public void setSubscriptionStore(SubscriptionStore subscriptionStore) {
+		this.subscriptionStore = subscriptionStore;
 	}
 
 	public void setAuthenticator(Authenticator authenticator) {

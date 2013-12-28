@@ -1,5 +1,7 @@
 package com.github.shimonxin.lms.proto;
 
+import java.nio.ByteBuffer;
+
 /**
  *
  * @author andrea
@@ -7,16 +9,7 @@ package com.github.shimonxin.lms.proto;
 public class PublishMessage extends MessageIDMessage {
 
     private String m_topicName;
-//    private Integer m_messageID; //could be null if Qos is == 0
-    private byte[] m_payload;
-
-    /*public Integer getMessageID() {
-        return m_messageID;
-    }
-
-    public void setMessageID(Integer messageID) {
-        this.m_messageID = messageID;
-    }*/
+    private ByteBuffer m_payload;
     
     public PublishMessage() {
         m_messageType = AbstractMessage.PUBLISH;
@@ -30,11 +23,11 @@ public class PublishMessage extends MessageIDMessage {
         this.m_topicName = topicName;
     }
 
-    public byte[] getPayload() {
+    public ByteBuffer getPayload() {
         return m_payload;
     }
 
-    public void setPayload(byte[] payload) {
+    public void setPayload(ByteBuffer payload) {
         this.m_payload = payload;
     }
 }

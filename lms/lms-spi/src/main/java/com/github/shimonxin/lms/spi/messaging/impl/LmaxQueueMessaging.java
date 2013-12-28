@@ -2,7 +2,6 @@ package com.github.shimonxin.lms.spi.messaging.impl;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +19,7 @@ import com.github.shimonxin.lms.proto.SubscribeMessage;
 import com.github.shimonxin.lms.proto.UnsubscribeMessage;
 import com.github.shimonxin.lms.spi.events.DisconnectEvent;
 import com.github.shimonxin.lms.spi.events.InitEvent;
+import com.github.shimonxin.lms.spi.events.LostConnectionEvent;
 import com.github.shimonxin.lms.spi.events.MessagingEvent;
 import com.github.shimonxin.lms.spi.events.ProtocolEvent;
 import com.github.shimonxin.lms.spi.events.PublishEvent;
@@ -66,6 +66,11 @@ public class LmaxQueueMessaging implements Messaging, EventHandler<ValueEvent> {
 	}
 
 	@Override
+	public void lostConnection(String clientID) {
+		disruptorPublish(new LostConnectionEvent(clientID));
+	}
+
+	@Override
 	public void handleProtocolMessage(ServerChannel session, AbstractMessage msg) {
 		disruptorPublish(new ProtocolEvent(session, msg));
 	}
@@ -84,7 +89,9 @@ public class LmaxQueueMessaging implements Messaging, EventHandler<ValueEvent> {
 	public void onEvent(ValueEvent t, long l, boolean bln) throws Exception {
 		MessagingEvent evt = t.getEvent();
 		LOG.info("onEvent processing messaging event " + evt);
-		if (evt instanceof StopEvent) {
+		if (evt instanceof PublishEvent) {
+			m_processor.processPublish((PublishEvent) evt);
+		} else if (evt instanceof StopEvent) {
 			processStop();
 		} else if (evt instanceof DisconnectEvent) {
 			DisconnectEvent disEvt = (DisconnectEvent) evt;
@@ -133,7 +140,10 @@ public class LmaxQueueMessaging implements Messaging, EventHandler<ValueEvent> {
 
 		} else if (evt instanceof InitEvent) {
 			processInit();
-		}
+		} else if (evt instanceof LostConnectionEvent) {
+            LostConnectionEvent lostEvt = (LostConnectionEvent) evt;
+            m_processor.proccessConnectionLost(lostEvt.getClientID());
+        }
 	}
 
 	private void processInit() {
@@ -155,4 +165,5 @@ public class LmaxQueueMessaging implements Messaging, EventHandler<ValueEvent> {
 		m_processor.processStop();
 		m_executor.shutdown();
 	}
+
 }

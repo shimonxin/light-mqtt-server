@@ -1,6 +1,7 @@
 package com.github.shimonxin.lms.spi.store;
 
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 
 import com.github.shimonxin.lms.proto.QoS;
 
@@ -10,10 +11,10 @@ public class StoredMessage implements Serializable {
 	 */
 	private static final long serialVersionUID = 4667605603518529945L;
 	QoS m_qos;
-	byte[] m_payload;
+	ByteBuffer m_payload;
 	String m_topic;
 
-	public StoredMessage(byte[] message, QoS qos, String topic) {
+	public StoredMessage(ByteBuffer message, QoS qos, String topic) {
 		m_qos = qos;
 		m_payload = message;
 		m_topic = topic;
@@ -23,7 +24,7 @@ public class StoredMessage implements Serializable {
 		return m_qos;
 	}
 
-	public byte[] getPayload() {
+	public ByteBuffer getPayload() {
 		return m_payload;
 	}
 

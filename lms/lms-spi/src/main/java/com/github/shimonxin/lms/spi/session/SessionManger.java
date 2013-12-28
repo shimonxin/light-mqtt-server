@@ -52,5 +52,5 @@ public interface SessionManger {
 	 * 
 	 * @param clientID
 	 */
-	void remove(String clientID);
+	SessionDescriptor remove(String clientID);
 }

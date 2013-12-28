@@ -18,6 +18,8 @@ public interface Messaging {
 	 * @param session
 	 */
 	void disconnect(ServerChannel session);
+	 
+	void lostConnection(String clientID);
 	/**
 	 * 
 	 * handle protocol message
