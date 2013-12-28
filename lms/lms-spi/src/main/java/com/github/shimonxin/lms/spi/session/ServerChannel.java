@@ -17,7 +17,7 @@ public interface ServerChannel {
     
     void setIdleTime(int idleTime);
     
-    void close();
+    void close(boolean immediately);
     
     void write(Object value);
 }

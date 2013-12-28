@@ -77,6 +77,16 @@ public class LmaxQueueMessaging implements Messaging, EventHandler<ValueEvent> {
 
 	@Override
 	public void init() {
+		LOG.debug("processInit invoked");
+		m_executor = Executors.newFixedThreadPool(1);
+
+		m_ringBuffer = new RingBuffer<ValueEvent>(ValueEvent.EVENT_FACTORY, 1024 * 32);
+
+		SequenceBarrier barrier = m_ringBuffer.newBarrier();
+		m_eventProcessor = new BatchEventProcessor<ValueEvent>(m_ringBuffer, barrier, this);
+		// TODO in a presentation is said to don't do the followinf line!!
+		m_ringBuffer.setGatingSequences(m_eventProcessor.getSequence());
+		m_executor.submit(m_eventProcessor);
 		disruptorPublish(new InitEvent());
 	}
 
@@ -141,22 +151,13 @@ public class LmaxQueueMessaging implements Messaging, EventHandler<ValueEvent> {
 		} else if (evt instanceof InitEvent) {
 			processInit();
 		} else if (evt instanceof LostConnectionEvent) {
-            LostConnectionEvent lostEvt = (LostConnectionEvent) evt;
-            m_processor.proccessConnectionLost(lostEvt.getClientID());
-        }
+			LostConnectionEvent lostEvt = (LostConnectionEvent) evt;
+			m_processor.proccessConnectionLost(lostEvt.getClientID());
+		}
 	}
 
 	private void processInit() {
-		LOG.debug("processInit invoked");
-		m_executor = Executors.newFixedThreadPool(1);
 
-		m_ringBuffer = new RingBuffer<ValueEvent>(ValueEvent.EVENT_FACTORY, 1024 * 32);
-
-		SequenceBarrier barrier = m_ringBuffer.newBarrier();
-		m_eventProcessor = new BatchEventProcessor<ValueEvent>(m_ringBuffer, barrier, this);
-		// TODO in a presentation is said to don't do the followinf line!!
-		m_ringBuffer.setGatingSequences(m_eventProcessor.getSequence());
-		m_executor.submit(m_eventProcessor);
 		m_processor.processInit();
 	}
 

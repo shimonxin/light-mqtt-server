@@ -13,26 +13,40 @@ import com.github.shimonxin.lms.spi.session.ServerChannel;
  */
 public interface Messaging {
 	/**
-	 * 
-	 * disconnect
-	 * @param session
+	 * @param processer
 	 */
-	void disconnect(ServerChannel session);
-	 
-	void lostConnection(String clientID);
-	/**
-	 * 
-	 * handle protocol message
-	 * @param session
-	 * @param msg
-	 */
-	void handleProtocolMessage(ServerChannel session, AbstractMessage msg);
+	void setProtocolProcessor(ProtocolProcessor processer);
+
 	/**
 	 * 
 	 * init
 	 */
 	void init();
-	
+
+	/**
+	 * 
+	 * handle protocol message
+	 * 
+	 * @param session
+	 * @param msg
+	 */
+	void handleProtocolMessage(ServerChannel session, AbstractMessage msg);
+
+	/**
+	 * 
+	 * disconnect
+	 * 
+	 * @param session
+	 */
+	void disconnect(ServerChannel session);
+
+	/**
+	 * lost connection
+	 * 
+	 * @param clientID
+	 */
+	void lostConnection(String clientID);
+
 	/**
 	 * stop
 	 */

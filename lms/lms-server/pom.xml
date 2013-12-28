@@ -12,7 +12,35 @@
 	<artifactId>lms-server</artifactId>
 	<packaging>jar</packaging>
 	<name>LMS Server</name>
+	<repositories>
+		<repository>
+			<id>xingyun</id>
+			<name>Xingyun Repository</name>
+			<url>http://10.0.1.100:8888/nexus/content/groups/public/</url>
+		</repository>
+	</repositories>
+
+	<pluginRepositories>
+		<pluginRepository>
+			<id>xingyun</id>
+			<name>Xingyun Repository</name>
+			<url>http://10.0.1.100:8888/nexus/content/groups/public/</url>
+		</pluginRepository>
+	</pluginRepositories>
+	<distributionManagement>
+		<repository>
+			<id>nexus</id>
+			<name>Team Nexus Release Repository</name>
+			<url>http://10.0.1.100:8888/nexus/content/repositories/xingyun</url>
+			<uniqueVersion>false</uniqueVersion>
+		</repository>
+	</distributionManagement>
 	<dependencies>
+		<dependency>
+			<groupId>com.github.shimonxin</groupId>
+			<artifactId>lms-spi</artifactId>
+			<version>0.1</version>
+		</dependency>
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
@@ -25,6 +53,18 @@
 			<version>4.11</version>
 			<scope>test</scope>
 		</dependency>
+        <dependency>
+            <groupId>org.fusesource.mqtt-client</groupId>
+            <artifactId>mqtt-client</artifactId>  
+            <version>1.5</version> 
+            <scope>test</scope>
+        </dependency>        
+        <dependency>
+            <groupId>org.eclipse.paho</groupId>
+            <artifactId>mqtt-client</artifactId>
+            <version>0.4.0</version>
+            <scope>test</scope>
+        </dependency>
 	</dependencies>
 
 	<build>

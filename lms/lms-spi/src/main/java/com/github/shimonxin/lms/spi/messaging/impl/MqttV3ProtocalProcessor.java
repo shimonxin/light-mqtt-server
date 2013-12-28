@@ -91,7 +91,7 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 			badProto.setReturnCode(ConnAckMessage.UNNACEPTABLE_PROTOCOL_VERSION);
 			LOG.info("processConnect sent bad proto ConnAck");
 			session.write(badProto);
-			session.close();
+			session.close(true);
 			return;
 		}
 		if (forceLogin && !msg.isUserFlag()) {
@@ -118,7 +118,7 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 				// cleanup topic subscriptions
 				processRemoveAllSubscriptions(msg.getClientID());
 			}
-			oldSession.close();
+			oldSession.close(true);
 		}
 
 		// handle user authentication
@@ -380,7 +380,7 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 			persistMessageStore.persistedPublishsForFuture(inflightMessageStore.retriveOutboundPublishes(clientID));
 		}
 		sessionManger.remove(clientID);
-		session.close();
+		session.close(true);
 		// de-activate the subscriptions for this ClientID
 		subscriptionStore.deactivate(clientID);
 		LOG.info("Disconnected client <{}> with clean session {}", clientID, cleanSession);
@@ -518,6 +518,10 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 
 	public void setForceLogin(boolean forceLogin) {
 		this.forceLogin = forceLogin;
+	}
+
+	public void setPersistMessageStore(PersistMessageStore persistMessageStore) {
+		this.persistMessageStore = persistMessageStore;
 	}
 
 }
