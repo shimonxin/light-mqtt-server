@@ -33,6 +33,7 @@ public class Server {
 	private String host = "0.0.0.0";
 	private int port = 1883;
 	private int defaultTimeout = 10;
+	private boolean forceLogin =false;
 	Messaging messaging;
 
 	public static void main(String[] args) throws IOException {
@@ -70,7 +71,7 @@ public class Server {
 			SessionManger sessionManger = new SessionManagerMemory();
 			MqttV3ProtocalProcessor processor = new MqttV3ProtocalProcessor();
 			processor.setAuthenticator(authenticator);
-			processor.setForceLogin(true);
+			processor.setForceLogin(forceLogin);
 			processor.setInflightMessageStore(inflightMessageStore);
 			processor.setRetainedMessageStore(retainedMessageStore);
 			processor.setPersistMessageStore(persistMessageStore);
@@ -96,5 +97,9 @@ public class Server {
 		} catch (InterruptedException ex) {
 			LOG.error(null, ex);
 		}
+	}
+
+	public void setForceLogin(boolean forceLogin) {
+		this.forceLogin = forceLogin;
 	}
 }
