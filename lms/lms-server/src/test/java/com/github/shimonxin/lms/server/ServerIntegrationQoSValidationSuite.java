@@ -1,10 +1,14 @@
 package com.github.shimonxin.lms.server;
 
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -14,11 +18,9 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
 import org.github.shimonxin.lms.server.Server;
 import org.junit.After;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import org.junit.Before;
-import org.junit.Test;
 import org.junit.BeforeClass;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -124,10 +126,26 @@ public class ServerIntegrationQoSValidationSuite {
         }
 
         m_server.stopServer();
-        File dbFile = new File(Server.STORAGE_FILE_PATH);
+        File dbFile = new File("/mqtt_inflight.db");
         if (dbFile.exists()) {
             dbFile.delete();
         }
+        assertFalse(dbFile.exists());
+        dbFile = new File("/mqtt_persist.db");
+        if (dbFile.exists()) {
+            dbFile.delete();
+        }
+        assertFalse(dbFile.exists());
+        dbFile = new File("/mqtt_retained.db");
+        if (dbFile.exists()) {
+            dbFile.delete();
+        }
+        assertFalse(dbFile.exists());
+        dbFile = new File("/mqtt_subscription.db");
+        if (dbFile.exists()) {
+            dbFile.delete();
+        }
+        assertFalse(dbFile.exists());
     }
     
     @Test

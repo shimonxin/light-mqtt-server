@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.NavigableSet;
 import java.util.concurrent.ConcurrentNavigableMap;
 
+import org.mapdb.BTreeKeySerializer;
 import org.mapdb.Bind;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
@@ -41,7 +42,7 @@ public class InflightMessageStoreMapDB implements InflightMessageStore {
 	public void init() {
 		db = DBMaker.newFileDB(new File(storeFile)).closeOnJvmShutdown().encryptionEnable("password").make();
 		m_inflightInboundStore = db.getTreeMap("inflightInbound");
-		m_inflightOutboundStore = db.getTreeSet("inflightOutbound");
+		m_inflightOutboundStore = db.createTreeSet("inflightOutbound").serializer(BTreeKeySerializer.TUPLE2).makeOrGet();
 	}
 
 	/**
@@ -95,12 +96,16 @@ public class InflightMessageStoreMapDB implements InflightMessageStore {
 	 */
 	@Override
 	public void cleanInFlightOutbound(String clientID, int messageID) {
-		List<Tuple2<String, PublishEvent>> publishs = new ArrayList<Tuple2<String, PublishEvent>>();
+		Tuple2<String, PublishEvent> tobeRemoved = null;
 		for (PublishEvent evt : Bind.findVals2(m_inflightOutboundStore, clientID)) {
-			publishs.add(Fun.t2(clientID, evt));
+			if (evt.getMessageID() == messageID) {
+				tobeRemoved = Fun.t2(clientID, evt);
+			}
 		}
-		m_inflightOutboundStore.removeAll(publishs);
-		db.commit();
+		if (tobeRemoved != null) {
+			m_inflightOutboundStore.remove(tobeRemoved);
+			db.commit();
+		}
 	}
 
 	/**

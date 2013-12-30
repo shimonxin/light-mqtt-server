@@ -60,9 +60,11 @@ public class RetainedMessageStoreMapDB implements RetainedMessageStore {
 		if (evt.getMessage().remaining() == 0) {
 			// clean the message from topic
 			m_retainedStore.remove(evt.getTopic());
+			db.commit();
 		} else {
 			// store the message to the topic
 			m_retainedStore.put(evt.getTopic(), new StoredMessage(evt.getMessage(), evt.getQos(), evt.getTopic()));
+			db.commit();
 		}
 	}
 

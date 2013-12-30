@@ -1,18 +1,21 @@
 package com.github.shimonxin.lms.server;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+
 import org.fusesource.mqtt.client.BlockingConnection;
 import org.fusesource.mqtt.client.MQTT;
+import org.fusesource.mqtt.client.Message;
 import org.fusesource.mqtt.client.QoS;
 import org.fusesource.mqtt.client.Topic;
-import org.fusesource.mqtt.client.Message;
 import org.github.shimonxin.lms.server.Server;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +61,20 @@ public class ServerIntegrationFuseTest {
         }
 
         m_server.stopServer();
-        File dbFile = new File(Server.STORAGE_FILE_PATH);
+        
+        File dbFile = new File("/mqtt_inflight.db");
+        if (dbFile.exists()) {
+            dbFile.delete();
+        }
+        dbFile = new File("/mqtt_persist.db");
+        if (dbFile.exists()) {
+            dbFile.delete();
+        }
+        dbFile = new File("/mqtt_retained.db");
+        if (dbFile.exists()) {
+            dbFile.delete();
+        }
+        dbFile = new File("/mqtt_subscription.db");
         if (dbFile.exists()) {
             dbFile.delete();
         }

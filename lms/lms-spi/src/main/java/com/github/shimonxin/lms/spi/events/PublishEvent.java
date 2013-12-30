@@ -6,83 +6,112 @@ import java.nio.ByteBuffer;
 import com.github.shimonxin.lms.proto.QoS;
 import com.github.shimonxin.lms.spi.session.ServerChannel;
 
-
-
 /**
- *
+ * 
  * @author andrea
  */
-public class PublishEvent extends MessagingEvent implements Serializable {
-    /**
+public class PublishEvent extends MessagingEvent implements Serializable, Comparable<PublishEvent> {
+	/**
 	 * serialVersionUID
 	 */
 	private static final long serialVersionUID = -2813326819401898446L;
 	String m_topic;
-    QoS m_qos;
-    ByteBuffer m_message;
-    boolean m_retain;
-    String m_clientID;
-    //Optional attribute, available only fo QoS 1 and 2
-    int m_msgID;
+	QoS m_qos;
+	transient ByteBuffer m_message;
+	// payload for persistence
+	private byte[] message_bytes;
+	boolean m_retain;
+	String m_clientID;
+	// Optional attribute, available only fo QoS 1 and 2
+	int m_msgID;
 
-    transient ServerChannel m_session;
-    
-    long timestamp;
-    
-    public PublishEvent(String topic, QoS qos, ByteBuffer message, boolean retain,
-            String clientID, ServerChannel session) {
-        m_topic = topic;
-        m_qos = qos;
-        m_message = message;
-        m_retain = retain;
-        m_clientID = clientID;
-        m_session = session;
-    }
+	transient ServerChannel m_session;
 
-    public PublishEvent(String topic, QoS qos, ByteBuffer message, boolean retain,
-                        String clientID, int msgID, ServerChannel session) {
-        this(topic, qos, message, retain, clientID, session);
-        m_msgID = msgID;
-    }
-    
-    public String getTopic() {
-        return m_topic;
-    }
+	long timestamp;
 
-    public QoS getQos() {
-        return m_qos;
-    }
+	public PublishEvent(String topic, QoS qos, ByteBuffer message, boolean retain, String clientID, ServerChannel session) {
+		m_topic = topic;
+		m_qos = qos;
+		m_message = message;
+		message_bytes = m_message.array();
+		m_retain = retain;
+		m_clientID = clientID;
+		m_session = session;
+	}
 
-    public ByteBuffer getMessage() {
-        return m_message;
-    }
+	public PublishEvent(String topic, QoS qos, ByteBuffer message, boolean retain, String clientID, int msgID, ServerChannel session) {
+		this(topic, qos, message, retain, clientID, session);
+		m_msgID = msgID;
+	}
 
-    public boolean isRetain() {
-        return m_retain;
-    }
-    
-    public String getClientID() {
-        return m_clientID;
-    }
+	public String getTopic() {
+		return m_topic;
+	}
 
-    public int getMessageID() {
-        return m_msgID;
-    }
+	public void setTopic(String topic) {
+		m_topic = topic;
+	}
 
-    public ServerChannel getSession() {
-        return m_session;
-    }
+	public QoS getQos() {
+		return m_qos;
+	}
 
-    @Override
-    public String toString() {
-        return "PublishEvent{" +
-                "m_msgID=" + m_msgID +
-                ", m_clientID='" + m_clientID + '\'' +
-                ", m_retain=" + m_retain +
-                ", m_qos=" + m_qos +
-                ", m_topic='" + m_topic + '\'' +
-                '}';
-    }
+	public void setQos(QoS qos) {
+		m_qos = qos;
+	}
+
+	public ByteBuffer getMessage() {
+		if (m_message == null && message_bytes != null) {
+			m_message = ByteBuffer.wrap(message_bytes);
+		}
+		return m_message;
+	}
+
+	public byte[] getMessageBytes() {
+		if (message_bytes == null && m_message != null) {
+			message_bytes = m_message.array();
+		}
+		return message_bytes;
+	}
+
+	public void setMessageBytes(byte[] message_bytes) {
+		this.message_bytes = message_bytes;
+		m_message = ByteBuffer.wrap(message_bytes);
+	}
+
+	public boolean isRetain() {
+		return m_retain;
+	}
+
+	public void setRetain(boolean retain) {
+		this.m_retain = retain;
+	}
+
+	public String getClientID() {
+		return m_clientID;
+	}
+
+	public void setClientID(String clientID) {
+		m_clientID = clientID;
+	}
+
+	public int getMessageID() {
+		return m_msgID;
+	}
+
+	public void getMessageID(int msgId) {
+		m_msgID = msgId;
+	}
+
+	public ServerChannel getSession() {
+		return m_session;
+	}
+
+	@Override
+	public String toString() {
+		return "PublishEvent{" + "m_msgID=" + m_msgID + ", m_clientID='" + m_clientID + '\'' + ", m_retain=" + m_retain + ", m_qos=" + m_qos + ", m_topic='"
+				+ m_topic + '\'' + '}';
+	}
 
 	public long getTimestamp() {
 		return timestamp;
@@ -124,5 +153,25 @@ public class PublishEvent extends MessagingEvent implements Serializable {
 			return false;
 		}
 		return true;
+	}
+
+	@Override
+	public int compareTo(PublishEvent other) {
+		if (other == null) {
+			return 1;
+		}
+		if (this == other) {
+			return 0;
+		}
+		if (m_clientID == null) {
+			if (other.m_clientID != null) {
+				return -1;
+			}
+			return 0;
+		} else if (!m_clientID.equals(other.m_clientID)) {
+			return m_clientID.compareTo(other.m_clientID);
+		} else {
+			return m_msgID - other.m_msgID;
+		}
 	}
 }

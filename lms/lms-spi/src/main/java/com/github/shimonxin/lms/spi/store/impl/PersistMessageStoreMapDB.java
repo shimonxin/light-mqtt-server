@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.NavigableSet;
 import java.util.Set;
 
+import org.mapdb.BTreeKeySerializer;
 import org.mapdb.Bind;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
@@ -37,7 +38,7 @@ public class PersistMessageStoreMapDB implements PersistMessageStore {
 	@Override
 	public void init() {
 		db = DBMaker.newFileDB(new File(storeFile)).closeOnJvmShutdown().encryptionEnable("password").make();
-		m_persistentMessageStore = db.getTreeSet("persistedMessages");
+		m_persistentMessageStore = db.createTreeSet("persistedMessages").serializer(BTreeKeySerializer.TUPLE2).makeOrGet();
 	}
 
 	@Override
@@ -50,6 +51,7 @@ public class PersistMessageStoreMapDB implements PersistMessageStore {
 	@Override
 	public void persistedPublishForFuture(PublishEvent newPublishEvt) {
 		m_persistentMessageStore.add(Fun.t2(newPublishEvt.getClientID(), newPublishEvt));
+		db.commit();
 	}
 
 	@Override
@@ -82,6 +84,7 @@ public class PersistMessageStoreMapDB implements PersistMessageStore {
 		}
 		if (eventToRemove != null) {
 			m_persistentMessageStore.remove(Fun.t2(clientID, eventToRemove));
+			db.commit();
 		}
 	}
 
@@ -91,6 +94,7 @@ public class PersistMessageStoreMapDB implements PersistMessageStore {
 		for (PublishEvent evt : newPublishEvts) {
 			persistedPublishForFuture(evt);
 		}
+		db.commit();
 	}
 
 	public void setStoreFile(String storeFile) {

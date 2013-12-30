@@ -104,7 +104,22 @@ public class ServerIntegrationPahoTest {
         }
 
         m_server.stopServer();
-        File dbFile = new File(Server.STORAGE_FILE_PATH);
+        File dbFile = new File("/mqtt_inflight.db");
+        if (dbFile.exists()) {
+            dbFile.delete();
+        }
+        assertFalse(dbFile.exists());
+        dbFile = new File("/mqtt_persist.db");
+        if (dbFile.exists()) {
+            dbFile.delete();
+        }
+        assertFalse(dbFile.exists());
+        dbFile = new File("/mqtt_retained.db");
+        if (dbFile.exists()) {
+            dbFile.delete();
+        }
+        assertFalse(dbFile.exists());
+        dbFile = new File("/mqtt_subscription.db");
         if (dbFile.exists()) {
             dbFile.delete();
         }

@@ -12,6 +12,8 @@ import java.util.NavigableSet;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingDeque;
 
+import org.mapdb.BTreeKeySerializer;
+import org.mapdb.Bind;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Fun;
@@ -38,14 +40,14 @@ public class SubscriptionStoreMapDB implements SubscriptionStore {
 	private TreeNode subscriptions = new TreeNode(null);
 	// persistent Map of clientID, set of Subscriptions
 	private NavigableSet<Fun.Tuple2<String, Subscription>> m_persistentSubscriptions;
-	
+
 	/**
 	 * @see com.github.shimonxin.lms.spi.store.SubscriptionStore#init()
 	 */
 	@Override
 	public void init() {
-		db = DBMaker.newFileDB(new File(storeFile)).closeOnJvmShutdown().encryptionEnable("password").make();
-		m_persistentSubscriptions = db.getTreeSet("subscriptions");
+		db = DBMaker.newFileDB(new File(storeFile)).closeOnJvmShutdown().encryptionEnable("password").make();		
+		m_persistentSubscriptions = db.createTreeSet("subscriptions").serializer(BTreeKeySerializer.TUPLE2).makeOrGet();
 		// reload any subscriptions persisted
 		LOG.debug("Reloading all stored subscriptions...");
 		for (Tuple2<String, Subscription> t : m_persistentSubscriptions.descendingSet()) {
@@ -135,7 +137,14 @@ public class SubscriptionStoreMapDB implements SubscriptionStore {
 	public void removeForClient(String clientID) {
 		subscriptions.removeClientSubscriptions(clientID);
 		// remove from log all subscriptions
-		m_persistentSubscriptions.remove(clientID);
+		List<Tuple2<String, Subscription>> subs = new ArrayList<Tuple2<String, Subscription>>();
+		for (Subscription sub : Bind.findVals2(m_persistentSubscriptions, clientID)) {
+			subs.add(Fun.t2(clientID, sub));
+		}
+		if (!subs.isEmpty()){
+			m_persistentSubscriptions.removeAll(subs);
+			db.commit();
+		}
 	}
 
 	/**
@@ -147,8 +156,7 @@ public class SubscriptionStoreMapDB implements SubscriptionStore {
 	}
 
 	/**
-	 * @see com.github.shimonxin.lms.spi.store.SubscriptionStore#removeSubscription(java.lang.String,
-	 *      java.lang.String)
+	 * @see com.github.shimonxin.lms.spi.store.SubscriptionStore#removeSubscription(java.lang.String, java.lang.String)
 	 */
 	@Override
 	public void removeSubscription(String topic, String clientID) {
@@ -163,7 +171,7 @@ public class SubscriptionStoreMapDB implements SubscriptionStore {
 		}
 		if (toBeRemoved != null) {
 			matchNode.subscriptions().remove(toBeRemoved);
-			m_persistentSubscriptions.remove(toBeRemoved);
+			m_persistentSubscriptions.remove(Fun.t2(clientID, toBeRemoved));
 			db.commit();
 		}
 
@@ -183,8 +191,7 @@ public class SubscriptionStoreMapDB implements SubscriptionStore {
 	/**
 	 * Verify if the 2 topics matching respecting the rules of MQTT Appendix A
 	 * 
-	 * @see com.github.shimonxin.lms.spi.store.SubscriptionStore#matchTopics(java.lang.String,
-	 *      java.lang.String)
+	 * @see com.github.shimonxin.lms.spi.store.SubscriptionStore#matchTopics(java.lang.String, java.lang.String)
 	 */
 	@Override
 	public boolean matchTopics(String msgTopic, String subscriptionTopic) {

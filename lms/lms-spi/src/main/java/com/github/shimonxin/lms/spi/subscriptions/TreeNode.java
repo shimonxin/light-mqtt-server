@@ -105,7 +105,7 @@ public class TreeNode {
         //collect what to delete and then delete to avoid ConcurrentModification
         List<Subscription> subsToRemove = new ArrayList<Subscription>();
         for (Subscription s : m_subscriptions) {
-            if (s.clientId.equals(clientID)) {
+            if (s.getClientId().equals(clientID)) {
                 subsToRemove.add(s);
             }
         }
@@ -125,7 +125,7 @@ public class TreeNode {
      * */
     public void deactivate(String clientID) {
         for (Subscription s : m_subscriptions) {
-            if (s.clientId.equals(clientID)) {
+            if (s.getClientId().equals(clientID)) {
                 s.setActive(false);
             }
         }
@@ -141,7 +141,7 @@ public class TreeNode {
      * */
     public void activate(String clientID) {
         for (Subscription s : m_subscriptions) {
-            if (s.clientId.equals(clientID)) {
+            if (s.getClientId().equals(clientID)) {
                 s.setActive(true);
             }
         }
