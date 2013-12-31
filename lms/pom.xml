@@ -8,6 +8,14 @@
 	<packaging>pom</packaging>
 	<version>0.1</version>
 	<url>https://github.com/shimonxin/light-mqtt-server/</url>
+	<distributionManagement>
+		<repository>
+			<id>nexus</id>
+			<name>Team Nexus Release Repository</name>
+			<url>http://10.0.1.100:8888/nexus/content/repositories/xingyun</url>
+			<uniqueVersion>false</uniqueVersion>
+		</repository>
+	</distributionManagement>
 	<properties>
 		<java-version>1.6</java-version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>		
