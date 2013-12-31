@@ -1,7 +1,6 @@
 package com.github.shimonxin.lms.spi.store;
 
 import java.io.Serializable;
-import java.nio.ByteBuffer;
 
 import com.github.shimonxin.lms.proto.QoS;
 
