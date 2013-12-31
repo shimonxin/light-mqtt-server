@@ -61,7 +61,7 @@ public class InflightMessageStoreMapDB implements InflightMessageStore {
 	 */
 	@Override
 	public void addInFlightInbound(PublishEvent evt) {
-		m_inflightInboundStore.put(evt.getClientID(), new StoredPublishEvent(evt));
+		m_inflightInboundStore.put(String.format("%s%d", evt.getClientID(), evt.getMessageID()), new StoredPublishEvent(evt));
 		db.commit();
 	}
 
@@ -91,7 +91,7 @@ public class InflightMessageStoreMapDB implements InflightMessageStore {
 	 */
 	@Override
 	public void addInFlightOutbound(PublishEvent evt) {
-		StoredPublishEvent se=new StoredPublishEvent(evt);
+		StoredPublishEvent se = new StoredPublishEvent(evt);
 		se.setTimestamp(System.currentTimeMillis());
 		m_inflightOutboundStore.add(Fun.t2(evt.getClientID(), se));
 		db.commit();
