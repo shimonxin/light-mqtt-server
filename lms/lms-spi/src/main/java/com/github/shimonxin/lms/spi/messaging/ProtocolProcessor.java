@@ -28,7 +28,13 @@ public interface ProtocolProcessor {
 	 * start stop
 	 */
 	void processStop();
-
+	
+	/**
+	 * 
+	 * force login ?
+	 * @param forceLogin
+	 */
+	void setForceLogin(boolean forceLogin);
 	/**
 	 * 
 	 * process connect
