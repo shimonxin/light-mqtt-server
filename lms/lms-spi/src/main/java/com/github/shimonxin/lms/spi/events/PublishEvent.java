@@ -18,8 +18,6 @@ public class PublishEvent extends MessagingEvent implements Serializable, Compar
 	String m_topic;
 	QoS m_qos;
 	transient ByteBuffer m_message;
-	// payload for persistence
-	private byte[] message_bytes;
 	boolean m_retain;
 	String m_clientID;
 	// Optional attribute, available only fo QoS 1 and 2
@@ -27,13 +25,12 @@ public class PublishEvent extends MessagingEvent implements Serializable, Compar
 
 	transient ServerChannel m_session;
 
-	long timestamp;
+	
 
 	public PublishEvent(String topic, QoS qos, ByteBuffer message, boolean retain, String clientID, ServerChannel session) {
 		m_topic = topic;
 		m_qos = qos;
 		m_message = message;
-		message_bytes = m_message.array();
 		m_retain = retain;
 		m_clientID = clientID;
 		m_session = session;
@@ -61,22 +58,7 @@ public class PublishEvent extends MessagingEvent implements Serializable, Compar
 	}
 
 	public ByteBuffer getMessage() {
-		if (m_message == null && message_bytes != null) {
-			m_message = ByteBuffer.wrap(message_bytes);
-		}
 		return m_message;
-	}
-
-	public byte[] getMessageBytes() {
-		if (message_bytes == null && m_message != null) {
-			message_bytes = m_message.array();
-		}
-		return message_bytes;
-	}
-
-	public void setMessageBytes(byte[] message_bytes) {
-		this.message_bytes = message_bytes;
-		m_message = ByteBuffer.wrap(message_bytes);
 	}
 
 	public boolean isRetain() {
@@ -111,14 +93,6 @@ public class PublishEvent extends MessagingEvent implements Serializable, Compar
 	public String toString() {
 		return "PublishEvent{" + "m_msgID=" + m_msgID + ", m_clientID='" + m_clientID + '\'' + ", m_retain=" + m_retain + ", m_qos=" + m_qos + ", m_topic='"
 				+ m_topic + '\'' + '}';
-	}
-
-	public long getTimestamp() {
-		return timestamp;
-	}
-
-	public void setTimestamp(long timestamp) {
-		this.timestamp = timestamp;
 	}
 
 	@Override

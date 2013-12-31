@@ -440,7 +440,7 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 		for (StoredMessage storedMsg : messages) {
 			// fire the as retained the message
 			LOG.debug("send publish message for topic " + topic);
-			sendPublish(newSubscription.getClientId(), storedMsg.getTopic(), storedMsg.getQos(), storedMsg.getPayload(), true);
+			sendPublish(newSubscription.getClientId(), storedMsg.getTopic(), storedMsg.getQos(), ByteBuffer.wrap(storedMsg.getPayload()), true);
 		}
 	}
 

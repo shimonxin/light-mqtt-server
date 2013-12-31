@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import com.github.shimonxin.lms.spi.events.PublishEvent;
 import com.github.shimonxin.lms.spi.store.PersistMessageStore;
+import com.github.shimonxin.lms.spi.store.StoredPublishEvent;
 
 /**
  * PersistMessageStore MapDB
@@ -33,7 +34,7 @@ public class PersistMessageStoreMapDB implements PersistMessageStore {
 	private static final Logger LOG = LoggerFactory.getLogger(PersistMessageStoreMapDB.class);
 	private String storeFile;
 	private DB db;
-	private NavigableSet<Fun.Tuple2<String, PublishEvent>> m_persistentMessageStore;
+	private NavigableSet<Fun.Tuple2<String, StoredPublishEvent>> m_persistentMessageStore;
 
 	@Override
 	public void init() {
@@ -50,23 +51,23 @@ public class PersistMessageStoreMapDB implements PersistMessageStore {
 
 	@Override
 	public void persistedPublishForFuture(PublishEvent newPublishEvt) {
-		m_persistentMessageStore.add(Fun.t2(newPublishEvt.getClientID(), newPublishEvt));
+		m_persistentMessageStore.add(Fun.t2(newPublishEvt.getClientID(), new StoredPublishEvent(newPublishEvt)));
 		db.commit();
 	}
 
 	@Override
 	public List<PublishEvent> retrivePersistedPublishes(String clientId) {
 		List<PublishEvent> publishs = new ArrayList<PublishEvent>();
-		for (PublishEvent evt : Bind.findVals2(m_persistentMessageStore, clientId)) {
-			publishs.add(evt);
+		for (StoredPublishEvent evt : Bind.findVals2(m_persistentMessageStore, clientId)) {
+			publishs.add(evt.convertFromStored());
 		}
 		return publishs;
 	}
 
 	@Override
 	public void cleanPersistedPublishes(String clientID) {
-		Set<Tuple2<String, PublishEvent>> publishs = new HashSet<Tuple2<String, PublishEvent>>();
-		for (PublishEvent evt : Bind.findVals2(m_persistentMessageStore, clientID)) {
+		Set<Tuple2<String, StoredPublishEvent>> publishs = new HashSet<Tuple2<String, StoredPublishEvent>>();
+		for (StoredPublishEvent evt : Bind.findVals2(m_persistentMessageStore, clientID)) {
 			publishs.add(Fun.t2(clientID, evt));
 		}
 		m_persistentMessageStore.removeAll(publishs);
@@ -75,8 +76,8 @@ public class PersistMessageStoreMapDB implements PersistMessageStore {
 
 	@Override
 	public void removePersistedPublish(String clientID, int messageID) {
-		PublishEvent eventToRemove = null;
-		for (PublishEvent evt : Bind.findVals2(m_persistentMessageStore, clientID)) {
+		StoredPublishEvent eventToRemove = null;
+		for (StoredPublishEvent evt : Bind.findVals2(m_persistentMessageStore, clientID)) {
 			if (evt.getMessageID() == messageID) {
 				eventToRemove = evt;
 				break;

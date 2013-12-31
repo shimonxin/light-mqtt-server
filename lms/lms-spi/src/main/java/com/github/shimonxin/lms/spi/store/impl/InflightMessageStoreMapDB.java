@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import com.github.shimonxin.lms.spi.events.PublishEvent;
 import com.github.shimonxin.lms.spi.store.InflightMessageStore;
+import com.github.shimonxin.lms.spi.store.StoredPublishEvent;
 
 /**
  * InflightMessageStore MapDB
@@ -32,8 +33,8 @@ public class InflightMessageStoreMapDB implements InflightMessageStore {
 	private static final Logger LOG = LoggerFactory.getLogger(InflightMessageStoreMapDB.class);
 	private String storeFile;
 	private DB db;
-	private ConcurrentNavigableMap<String, PublishEvent> m_inflightInboundStore;
-	private NavigableSet<Fun.Tuple2<String, PublishEvent>> m_inflightOutboundStore;
+	private ConcurrentNavigableMap<String, StoredPublishEvent> m_inflightInboundStore;
+	private NavigableSet<Fun.Tuple2<String, StoredPublishEvent>> m_inflightOutboundStore;
 
 	/**
 	 * @see com.github.shimonxin.lms.spi.store.InflightMessageStore#init()
@@ -60,7 +61,7 @@ public class InflightMessageStoreMapDB implements InflightMessageStore {
 	 */
 	@Override
 	public void addInFlightInbound(PublishEvent evt) {
-		m_inflightInboundStore.put(evt.getClientID(), evt);
+		m_inflightInboundStore.put(evt.getClientID(), new StoredPublishEvent(evt));
 		db.commit();
 	}
 
@@ -69,7 +70,11 @@ public class InflightMessageStoreMapDB implements InflightMessageStore {
 	 */
 	@Override
 	public PublishEvent retriveInFlightInbound(String publishKey) {
-		return m_inflightInboundStore.get(publishKey);
+		StoredPublishEvent se = m_inflightInboundStore.get(publishKey);
+		if (se == null) {
+			return null;
+		}
+		return se.convertFromStored();
 	}
 
 	/**
@@ -86,8 +91,9 @@ public class InflightMessageStoreMapDB implements InflightMessageStore {
 	 */
 	@Override
 	public void addInFlightOutbound(PublishEvent evt) {
-		evt.setTimestamp(System.currentTimeMillis());
-		m_inflightOutboundStore.add(Fun.t2(evt.getClientID(), evt));
+		StoredPublishEvent se=new StoredPublishEvent(evt);
+		se.setTimestamp(System.currentTimeMillis());
+		m_inflightOutboundStore.add(Fun.t2(evt.getClientID(), se));
 		db.commit();
 	}
 
@@ -96,8 +102,8 @@ public class InflightMessageStoreMapDB implements InflightMessageStore {
 	 */
 	@Override
 	public void cleanInFlightOutbound(String clientID, int messageID) {
-		Tuple2<String, PublishEvent> tobeRemoved = null;
-		for (PublishEvent evt : Bind.findVals2(m_inflightOutboundStore, clientID)) {
+		Tuple2<String, StoredPublishEvent> tobeRemoved = null;
+		for (StoredPublishEvent evt : Bind.findVals2(m_inflightOutboundStore, clientID)) {
 			if (evt.getMessageID() == messageID) {
 				tobeRemoved = Fun.t2(clientID, evt);
 			}
@@ -116,9 +122,9 @@ public class InflightMessageStoreMapDB implements InflightMessageStore {
 		LOG.debug(String.format("retriveDelayedPublishes client[%s] keep alive[%ds]", clientID, keepAlive));
 		List<PublishEvent> publishs = new ArrayList<PublishEvent>();
 		long now = System.currentTimeMillis();
-		for (PublishEvent evt : Bind.findVals2(m_inflightOutboundStore, clientID)) {
+		for (StoredPublishEvent evt : Bind.findVals2(m_inflightOutboundStore, clientID)) {
 			if ((now - evt.getTimestamp()) > (keepAlive * 1000)) {
-				publishs.add(evt);
+				publishs.add(evt.convertFromStored());
 			}
 		}
 		return publishs;
@@ -131,8 +137,8 @@ public class InflightMessageStoreMapDB implements InflightMessageStore {
 	public List<PublishEvent> retriveOutboundPublishes(String clientID) {
 		LOG.debug(String.format("retriveOutboundPublishes client[%s] ", clientID));
 		List<PublishEvent> publishs = new ArrayList<PublishEvent>();
-		for (PublishEvent evt : Bind.findVals2(m_inflightOutboundStore, clientID)) {
-			publishs.add(evt);
+		for (StoredPublishEvent evt : Bind.findVals2(m_inflightOutboundStore, clientID)) {
+			publishs.add(evt.convertFromStored());
 		}
 		return publishs;
 	}
@@ -144,8 +150,8 @@ public class InflightMessageStoreMapDB implements InflightMessageStore {
 	public List<PublishEvent> retriveDelayedPublishes() {
 		LOG.debug("retriveAllOutboundPublishes ");
 		List<PublishEvent> publishs = new ArrayList<PublishEvent>();
-		for (Tuple2<String, PublishEvent> t : m_inflightOutboundStore.descendingSet()) {
-			publishs.add(t.b);
+		for (Tuple2<String, StoredPublishEvent> t : m_inflightOutboundStore.descendingSet()) {
+			publishs.add(t.b.convertFromStored());
 		}
 		return publishs;
 	}

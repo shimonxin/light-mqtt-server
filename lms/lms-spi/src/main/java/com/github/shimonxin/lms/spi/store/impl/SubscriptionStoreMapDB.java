@@ -98,6 +98,7 @@ public class SubscriptionStoreMapDB implements SubscriptionStore {
 	public void stop() {
 		if (db != null)
 			db.close();
+		subscriptions = new TreeNode(null);
 	}
 
 	/**
@@ -232,8 +233,17 @@ public class SubscriptionStoreMapDB implements SubscriptionStore {
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	protected static List<Token> splitTopic(String topic) throws ParseException {
+	protected static List<Token> splitTopic(String topic) throws ParseException {		
 		List res = new ArrayList<Token>();
+		if(topic == null ){
+			return res;
+		}
+		if("/".equals(topic)){
+			res.add(Token.EMPTY);
+			return res;
+		}
+		// ignore first seperator
+		topic =topic.substring(1);
 		String[] splitted = topic.split("/");
 
 		if (splitted.length == 0) {
@@ -243,12 +253,7 @@ public class SubscriptionStoreMapDB implements SubscriptionStore {
 		for (int i = 0; i < splitted.length; i++) {
 			String s = splitted[i];
 			if (s.isEmpty()) {
-				// if (i != 0) {
-				// throw new
-				// ParseException("Bad format of topic, expetec topic name between separators",
-				// i);
-				// }
-				res.add(Token.EMPTY);
+				throw new ParseException("Bad format of topic, expetec topic name between separators", i);
 			} else if (s.equals("#")) {
 				// check that multi is the last symbol
 				if (i != splitted.length - 1) {

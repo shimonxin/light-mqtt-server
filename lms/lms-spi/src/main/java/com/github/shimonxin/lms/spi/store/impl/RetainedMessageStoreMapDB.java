@@ -63,7 +63,7 @@ public class RetainedMessageStoreMapDB implements RetainedMessageStore {
 			db.commit();
 		} else {
 			// store the message to the topic
-			m_retainedStore.put(evt.getTopic(), new StoredMessage(evt.getMessage(), evt.getQos(), evt.getTopic()));
+			m_retainedStore.put(evt.getTopic(), new StoredMessage(evt.getMessage().array(), evt.getQos(), evt.getTopic()));
 			db.commit();
 		}
 	}
