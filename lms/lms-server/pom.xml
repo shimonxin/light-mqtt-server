@@ -14,27 +14,11 @@
 	<name>LMS Server</name>
 	<repositories>
 		<repository>
-			<id>xingyun</id>
-			<name>Xingyun Repository</name>
-			<url>http://10.0.1.100:8888/nexus/content/groups/public/</url>
+			<id>paho</id>
+			<name>paho Repository</name>
+			<url>https://repo.eclipse.org/content/repositories/paho-releases/</url>
 		</repository>
 	</repositories>
-
-	<pluginRepositories>
-		<pluginRepository>
-			<id>xingyun</id>
-			<name>Xingyun Repository</name>
-			<url>http://10.0.1.100:8888/nexus/content/groups/public/</url>
-		</pluginRepository>
-	</pluginRepositories>
-	<distributionManagement>
-		<repository>
-			<id>nexus</id>
-			<name>Team Nexus Release Repository</name>
-			<url>http://10.0.1.100:8888/nexus/content/repositories/xingyun</url>
-			<uniqueVersion>false</uniqueVersion>
-		</repository>
-	</distributionManagement>
 	<dependencies>
 		<dependency>
 			<groupId>com.github.shimonxin</groupId>
