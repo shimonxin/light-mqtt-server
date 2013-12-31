@@ -21,9 +21,85 @@ Feature
 Simple Example
 ----
 ```java
-// TODO 
+final Server server = new Server();
+server.startServer();
+// Bind a shutdown hook
+Runtime.getRuntime().addShutdownHook(new Thread() {
+	@Override
+	public void run() {
+		server.stopServer();
+	}
+});
 ```
 
+MQTT Server started at 0.0.0.0:1883
+
+Custom Example
+----
+```java
+// custom Inflight Message Store
+InflightMessageStoreMapDB inflightMessageStore = new InflightMessageStoreMapDB();
+inflightMessageStore.setStoreFile("/mqtt_inflight.db");
+
+// custom Persist Message Store
+PersistMessageStoreMapDB persistMessageStore = new PersistMessageStoreMapDB();
+persistMessageStore.setStoreFile("/mqtt_persist.db");
+
+// custom your Persist Message Store
+RetainedMessageStoreMapDB retainedMessageStore = new RetainedMessageStoreMapDB();
+retainedMessageStore.setStoreFile("/mqtt_retained.db");
+
+// custom your Subscription Store
+SubscriptionStoreMapDB subscriptionStore = new SubscriptionStoreMapDB();
+subscriptionStore.setStoreFile("/mqtt_subscription.db");
+
+// custom your Authenticator
+Authenticator authenticator = new Authenticator() {
+	@Override
+	public boolean auth(String clientId, String username, String password) {
+		// allways return true;
+		return true;
+	}
+
+};
+
+// custom your Session Manger
+SessionManger sessionManger = new SessionManagerMemory();
+
+// custom your Protocal Processor
+MqttV3ProtocalProcessor processor = new MqttV3ProtocalProcessor();
+processor.setAuthenticator(authenticator);
+// force user login?
+processor.setForceLogin(false);
+processor.setInflightMessageStore(inflightMessageStore);
+processor.setRetainedMessageStore(retainedMessageStore);
+processor.setPersistMessageStore(persistMessageStore);
+processor.setSessionManger(sessionManger);
+processor.setSubscriptionStore(subscriptionStore);
+
+// custom Messaging
+LmaxQueueMessaging messaging = new LmaxQueueMessaging();
+messaging.setProtocolProcessor(processor);	
+
+// custom Server Acceptor
+ServerAcceptor acceptor = new NettyAcceptor();	
+final Server server = new Server();
+server.setAcceptor(acceptor);
+server.setMessaging(messaging);
+// server configuration
+server.setHost("example.org");
+server.setPort(1883);
+server.setDefaultTimeout(10);
+// start
+server.startServer();
+// Bind a shutdown hook
+Runtime.getRuntime().addShutdownHook(new Thread() {
+	@Override
+	public void run() {
+		server.stopServer();
+	}
+});
+```
 
 License
 -------
