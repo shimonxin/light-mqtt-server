@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import com.github.shimonxin.lms.proto.ConnAckMessage;
 import com.github.shimonxin.lms.proto.ConnectMessage;
+import com.github.shimonxin.lms.proto.PingRespMessage;
 import com.github.shimonxin.lms.proto.PubAckMessage;
 import com.github.shimonxin.lms.proto.PubCompMessage;
 import com.github.shimonxin.lms.proto.PubRecMessage;
@@ -449,6 +450,8 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 		String clientID = (String) session.getAttribute(SessionConstants.ATTR_CLIENTID);
 		int keepAlive = (Integer) session.getAttribute(SessionConstants.KEEP_ALIVE);
 		republishDelayedMessages(clientID, keepAlive);
+		PingRespMessage resp=new PingRespMessage();
+		session.write(resp);
 	}
 
 	/**
