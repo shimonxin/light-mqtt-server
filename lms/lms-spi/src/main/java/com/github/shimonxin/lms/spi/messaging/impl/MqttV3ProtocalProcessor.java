@@ -145,14 +145,6 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 		session.setAttribute(SessionConstants.ATTR_CLIENTID, msg.getClientID());
 		session.setIdleTime(Math.round(keepAlive * 1.5f));
 		LOG.debug(String.format("Connect as user[%s] with clientID[%s] keepAlive[%ds]", msg.getUsername(), msg.getClientID(), keepAlive));
-		// Handle will flag
-		if (msg.isWillFlag()) {
-			QoS willQos = QoS.values()[msg.getWillQos()];
-			byte[] willPayload = msg.getWillMessage().getBytes();
-			ByteBuffer bb = (ByteBuffer) ByteBuffer.allocate(willPayload.length).put(willPayload).flip();
-			PublishEvent pubEvt = new PublishEvent(msg.getWillTopic(), willQos, bb, msg.isWillRetain(), msg.getClientID(), session);
-			processPublish(pubEvt);
-		}
 
 		subscriptionStore.activate(msg.getClientID());
 
@@ -171,6 +163,14 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 		if (!msg.isCleanSession()) {
 			// force the republish of stored QoS1 and QoS2
 			republishOfflineMessages(msg.getClientID());
+		}
+		// Handle will flag
+		if (msg.isWillFlag()) {
+			QoS willQos = QoS.values()[msg.getWillQos()];
+			byte[] willPayload = msg.getWillMessage().getBytes();
+			ByteBuffer bb = (ByteBuffer) ByteBuffer.allocate(willPayload.length).put(willPayload).flip();
+			PublishEvent pubEvt = new PublishEvent(msg.getWillTopic(), willQos, bb, msg.isWillRetain(), msg.getClientID(), session);
+			processPublish(pubEvt);
 		}
 	}
 
@@ -450,7 +450,7 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 		String clientID = (String) session.getAttribute(SessionConstants.ATTR_CLIENTID);
 		int keepAlive = (Integer) session.getAttribute(SessionConstants.KEEP_ALIVE);
 		republishDelayedMessages(clientID, keepAlive);
-		PingRespMessage resp=new PingRespMessage();
+		PingRespMessage resp = new PingRespMessage();
 		session.write(resp);
 	}
 
