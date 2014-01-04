@@ -122,5 +122,5 @@ public interface ProtocolProcessor {
 	 * connection lost
 	 * @param clientID
 	 */
-	void proccessConnectionLost(String clientID);
+	void proccessConnectionLost(ServerChannel session);
 }

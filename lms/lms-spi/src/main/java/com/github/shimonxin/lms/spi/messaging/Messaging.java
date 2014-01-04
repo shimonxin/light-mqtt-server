@@ -44,7 +44,7 @@ public interface Messaging {
 	 * 
 	 * @param clientID
 	 */
-	void lostConnection(String clientID);
+	void lostConnection(ServerChannel session);
 
 	/**
 	 * stop

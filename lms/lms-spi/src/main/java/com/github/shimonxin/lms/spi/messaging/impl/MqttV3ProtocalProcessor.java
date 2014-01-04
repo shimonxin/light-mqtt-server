@@ -403,21 +403,23 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 		} else {
 			// save inflight messages to persist
 			persistMessageStore.persistedPublishsForFuture(inflightMessageStore.retriveOutboundPublishes(clientID));
+			// de-activate the subscriptions for this ClientID
+			subscriptionStore.deactivate(clientID);
 		}
 		sessionManger.remove(clientID);
-		session.close(true);
-		// de-activate the subscriptions for this ClientID
-		subscriptionStore.deactivate(clientID);
+		session.close(true);		
 		LOG.info("Disconnected client <{}> with clean session {}", clientID, cleanSession);
 	}
 
-	public void proccessConnectionLost(String clientID) {
+	public void proccessConnectionLost(ServerChannel channel) {
 		// If already removed a disconnect message was already processed for this clientID
-		if (sessionManger.remove(clientID) != null) {
-			// de-activate the subscriptions for this ClientID
-			subscriptionStore.deactivate(clientID);
-			LOG.info("Lost connection with client <{}>", clientID);
-		}
+		 String clientID = (String) channel.getAttribute(SessionConstants.ATTR_CLIENTID);
+		 SessionDescriptor sessionDescr= sessionManger.get(clientID);
+		 if(sessionDescr!=null){
+			 if(sessionDescr.getSession().equals(channel)){
+				 subscriptionStore.deactivate(clientID);
+			 }
+		 }		
 	}
 
 	@Override

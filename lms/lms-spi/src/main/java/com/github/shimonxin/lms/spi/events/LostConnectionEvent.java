@@ -1,19 +1,21 @@
 package com.github.shimonxin.lms.spi.events;
 
+import com.github.shimonxin.lms.spi.session.ServerChannel;
+
 /**
  * Used to model the connection lost event
  * 
  * @author andrea
  */
 public class LostConnectionEvent extends MessagingEvent{
-    private String m_clientID;
+    private ServerChannel m_session;
 
-    public LostConnectionEvent(String clienID) {
-        m_clientID = clienID;
+    public LostConnectionEvent(ServerChannel session) {
+    	m_session = session;
     }
 
-    public String getClientID() {
-        return m_clientID;
+    public ServerChannel getSession() {
+        return m_session;
     }
     
 }

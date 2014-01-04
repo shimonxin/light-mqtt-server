@@ -46,7 +46,7 @@ public class SubscriptionStoreMapDB implements SubscriptionStore {
 	 */
 	@Override
 	public void init() {
-		db = DBMaker.newFileDB(new File(storeFile)).closeOnJvmShutdown().encryptionEnable("password").make();		
+		db = DBMaker.newFileDB(new File(storeFile)).closeOnJvmShutdown().encryptionEnable("password").make();
 		m_persistentSubscriptions = db.createTreeSet("subscriptions").serializer(BTreeKeySerializer.TUPLE2).makeOrGet();
 		// reload any subscriptions persisted
 		LOG.debug("Reloading all stored subscriptions...");
@@ -142,7 +142,7 @@ public class SubscriptionStoreMapDB implements SubscriptionStore {
 		for (Subscription sub : Bind.findVals2(m_persistentSubscriptions, clientID)) {
 			subs.add(Fun.t2(clientID, sub));
 		}
-		if (!subs.isEmpty()){
+		if (!subs.isEmpty()) {
 			m_persistentSubscriptions.removeAll(subs);
 			db.commit();
 		}
@@ -185,8 +185,11 @@ public class SubscriptionStoreMapDB implements SubscriptionStore {
 	public void add(Subscription newSubscription) {
 		addDirect(newSubscription);
 		// log the subscription
-		m_persistentSubscriptions.add(Fun.t2(newSubscription.getClientId(), newSubscription));
-		db.commit();
+		Fun.Tuple2<String, Subscription> t = Fun.t2(newSubscription.getClientId(), newSubscription);
+		if (!m_persistentSubscriptions.contains(t)) {
+			m_persistentSubscriptions.add(t);
+			db.commit();
+		}
 	}
 
 	/**
@@ -233,17 +236,17 @@ public class SubscriptionStoreMapDB implements SubscriptionStore {
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	protected static List<Token> splitTopic(String topic) throws ParseException {		
+	protected static List<Token> splitTopic(String topic) throws ParseException {
 		List res = new ArrayList<Token>();
-		if(topic == null ){
+		if (topic == null) {
 			return res;
 		}
-		if("/".equals(topic)){
+		if ("/".equals(topic)) {
 			res.add(Token.EMPTY);
 			return res;
 		}
 		// ignore first seperator
-		topic =topic.substring(1);
+		topic = topic.substring(1);
 		String[] splitted = topic.split("/");
 
 		if (splitted.length == 0) {

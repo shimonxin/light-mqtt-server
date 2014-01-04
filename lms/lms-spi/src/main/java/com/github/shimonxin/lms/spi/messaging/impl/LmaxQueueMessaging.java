@@ -66,8 +66,8 @@ public class LmaxQueueMessaging implements Messaging, EventHandler<ValueEvent> {
 	}
 
 	@Override
-	public void lostConnection(String clientID) {
-		disruptorPublish(new LostConnectionEvent(clientID));
+	public void lostConnection(ServerChannel session) {
+		disruptorPublish(new LostConnectionEvent(session));
 	}
 
 	@Override
@@ -150,7 +150,7 @@ public class LmaxQueueMessaging implements Messaging, EventHandler<ValueEvent> {
 			processInit();
 		} else if (evt instanceof LostConnectionEvent) {
 			LostConnectionEvent lostEvt = (LostConnectionEvent) evt;
-			m_processor.proccessConnectionLost(lostEvt.getClientID());
+			m_processor.proccessConnectionLost(lostEvt.getSession());
 		}
 	}
 
