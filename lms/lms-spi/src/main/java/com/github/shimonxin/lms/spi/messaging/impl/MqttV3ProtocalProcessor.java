@@ -6,6 +6,8 @@ package com.github.shimonxin.lms.spi.messaging.impl;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -14,7 +16,6 @@ import org.slf4j.LoggerFactory;
 
 import com.github.shimonxin.lms.proto.ConnAckMessage;
 import com.github.shimonxin.lms.proto.ConnectMessage;
-import com.github.shimonxin.lms.proto.PingRespMessage;
 import com.github.shimonxin.lms.proto.PubAckMessage;
 import com.github.shimonxin.lms.proto.PubCompMessage;
 import com.github.shimonxin.lms.proto.PubRecMessage;
@@ -61,10 +62,14 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 	Authenticator authenticator;
 	SessionManger sessionManger;
 	boolean forceLogin;
-
 	private ExecutorService m_executor;
 	BatchEventProcessor<ValueEvent> m_eventProcessor;
 	private RingBuffer<ValueEvent> m_ringBuffer;
+	Timer timer;
+	/**
+	 * QoS 1,2 max delayed timeout (s)
+	 */
+	private int maxDelayed = 30;
 
 	@Override
 	public void processInit() {
@@ -74,14 +79,32 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 		subscriptionStore.init();
 		// init the output ringbuffer
 		m_executor = Executors.newFixedThreadPool(1);
-
 		m_ringBuffer = new RingBuffer<ValueEvent>(ValueEvent.EVENT_FACTORY, 1024 * 32);
-
 		SequenceBarrier barrier = m_ringBuffer.newBarrier();
 		m_eventProcessor = new BatchEventProcessor<ValueEvent>(m_ringBuffer, barrier, this);
 		// TODO in a presentation is said to don't do the followinf line!!
 		m_ringBuffer.setGatingSequences(m_eventProcessor.getSequence());
 		m_executor.submit(m_eventProcessor);
+		timer = new Timer();
+		timer.scheduleAtFixedRate(new TimerTask() {
+			/**
+			 * republish delayed messages
+			 */
+			@Override
+			public void run() {
+				LOG.debug("republish delayed messages ...");
+				List<PublishEvent> publishedEvents = inflightMessageStore.retriveDelayedPublishes(maxDelayed);
+				if (publishedEvents == null || publishedEvents.isEmpty()) {
+					LOG.debug("no delayed publish");
+					return;
+				} else {
+					LOG.debug("delayed publish： " + publishedEvents.size());
+				}
+				for (PublishEvent pubEvt : publishedEvents) {
+					sendPublish(pubEvt.getClientID(), pubEvt.getTopic(), pubEvt.getQos(), pubEvt.getMessage(), false, pubEvt.getMessageID(), true);
+				}
+			}
+		}, maxDelayed * 1000, maxDelayed * 1000);
 	}
 
 	@Override
@@ -110,18 +133,6 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 			return;
 		}
 
-		// if an old client with the same ID already exists close its session.
-		if (sessionManger.containsClient(msg.getClientID())) {
-			// clean the subscriptions if the old used a cleanSession = true
-			ServerChannel oldSession = sessionManger.get(msg.getClientID()).getSession();
-			boolean cleanSession = (Boolean) oldSession.getAttribute(SessionConstants.CLEAN_SESSION);
-			if (cleanSession) {
-				// cleanup topic subscriptions
-				processRemoveAllSubscriptions(msg.getClientID());
-			}
-			oldSession.close(true);
-		}
-
 		// handle user authentication
 		if (msg.isUserFlag()) {
 			String pwd = null;
@@ -133,6 +144,14 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 				okResp.setReturnCode(ConnAckMessage.BAD_USERNAME_OR_PASSWORD);
 				session.write(okResp);
 				return;
+			}
+		}
+		// if an old client with the same ID already exists close its session.
+		if (sessionManger.containsClient(msg.getClientID())) {
+			// clean the subscriptions if the old used a cleanSession = true
+			ServerChannel oldSession = sessionManger.get(msg.getClientID()).getSession();
+			if (!oldSession.equals(session)) {
+				processDisconnect(oldSession);
 			}
 		}
 		int keepAlive = msg.getKeepAlive();
@@ -163,7 +182,10 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 		if (!msg.isCleanSession()) {
 			// force the republish of stored QoS1 and QoS2
 			republishOfflineMessages(msg.getClientID());
+			// republish all delayed message
+			republishDelayedMessages(msg.getClientID(), keepAlive);
 		}
+
 		// Handle will flag
 		if (msg.isWillFlag()) {
 			QoS willQos = QoS.values()[msg.getWillQos()];
@@ -172,6 +194,7 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 			PublishEvent pubEvt = new PublishEvent(msg.getWillTopic(), willQos, bb, msg.isWillRetain(), msg.getClientID(), session);
 			processPublish(pubEvt);
 		}
+
 	}
 
 	/**
@@ -321,7 +344,6 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 			disruptorPublish(new OutputMessagingEvent(sessionDescr.getSession(), pubMessage));
 		} catch (Throwable t) {
 			LOG.error("send publish message to client error", t);
-			// TODO QoS 1 2 Persist ?
 		}
 	}
 
@@ -445,15 +467,6 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 		}
 	}
 
-	@Override
-	public void processPing(ServerChannel session) {
-		String clientID = (String) session.getAttribute(SessionConstants.ATTR_CLIENTID);
-		int keepAlive = (Integer) session.getAttribute(SessionConstants.KEEP_ALIVE);
-		republishDelayedMessages(clientID, keepAlive);
-		PingRespMessage resp = new PingRespMessage();
-		session.write(resp);
-	}
-
 	/**
 	 * 
 	 * republish delayed messages
@@ -474,6 +487,8 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 
 	@Override
 	public void processStop() {
+		if (timer != null)
+			timer.cancel();
 		// outbound inflight -> persist
 		persistMessageStore.persistedPublishsForFuture(inflightMessageStore.retriveDelayedPublishes());
 		inflightMessageStore.stop();
@@ -526,5 +541,4 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 	public void setPersistMessageStore(PersistMessageStore persistMessageStore) {
 		this.persistMessageStore = persistMessageStore;
 	}
-
 }

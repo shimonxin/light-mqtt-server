@@ -18,7 +18,6 @@ public interface Messaging {
 	void setProtocolProcessor(ProtocolProcessor processer);
 
 	/**
-	 * 
 	 * init
 	 */
 	void init();
