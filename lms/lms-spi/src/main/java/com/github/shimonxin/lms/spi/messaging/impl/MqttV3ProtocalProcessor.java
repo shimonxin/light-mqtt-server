@@ -335,10 +335,12 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 	private void sendMessageToClient(String clientID, PublishMessage pubMessage) {
 		try {
 			if (sessionManger.isEmpty()) {
+				subscriptionStore.deactivate(clientID);
 				throw new RuntimeException("Internal bad error, found m_clientIDs to null while it should be initialized, somewhere it's overwritten!!");
 			}
 			SessionDescriptor sessionDescr = sessionManger.get(clientID);
 			if (sessionDescr == null) {
+				subscriptionStore.deactivate(clientID);
 				throw new RuntimeException(String.format("Can't find a SessionDescriptor for client %s ", clientID));
 			}
 			disruptorPublish(new OutputMessagingEvent(sessionDescr.getSession(), pubMessage));
