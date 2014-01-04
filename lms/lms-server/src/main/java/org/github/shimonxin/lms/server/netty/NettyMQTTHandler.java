@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.shimonxin.lms.proto.AbstractMessage;
+import com.github.shimonxin.lms.proto.PingRespMessage;
 
 import static com.github.shimonxin.lms.proto.AbstractMessage.*;
 import com.github.shimonxin.lms.proto.Utils;
@@ -40,8 +41,7 @@ public class NettyMQTTHandler extends ChannelInboundHandlerAdapter {
                 case PUBCOMP:
                 case PUBREL:
                 case DISCONNECT:
-                case PUBACK:
-                case PINGREQ:
+                case PUBACK:               
                     NettyChannel channel;
                     synchronized(m_channelMapper) {
                         if (!m_channelMapper.containsKey(ctx)) {
@@ -51,6 +51,10 @@ public class NettyMQTTHandler extends ChannelInboundHandlerAdapter {
                     }                    
                     m_messaging.handleProtocolMessage(channel, msg);
                     break;
+                case PINGREQ:
+                	PingRespMessage resp = new PingRespMessage();
+                	ctx.writeAndFlush(resp);
+                	break;
             }
         } catch (Exception ex) {
             LOG.error("Bad error in processing the message", ex);

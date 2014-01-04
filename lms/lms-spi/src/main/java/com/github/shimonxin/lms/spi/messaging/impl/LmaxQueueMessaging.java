@@ -142,8 +142,6 @@ public class LmaxQueueMessaging implements Messaging, EventHandler<ValueEvent> {
 				String clientID = (String) session.getAttribute(SessionConstants.ATTR_CLIENTID);
 				int messageID = ((PubAckMessage) message).getMessageID();
 				m_processor.processPubAck(clientID, messageID);
-			} else if (message instanceof PingReqMessage) {
-				m_processor.processPing(session);
 			} else {
 				throw new RuntimeException("Illegal message received " + message);
 			}

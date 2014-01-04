@@ -123,7 +123,7 @@ public class InflightMessageStoreMapDB implements InflightMessageStore {
 		List<PublishEvent> publishs = new ArrayList<PublishEvent>();
 		long now = System.currentTimeMillis();
 		for (StoredPublishEvent evt : Bind.findVals2(m_inflightOutboundStore, clientID)) {
-			if ((now - evt.getTimestamp()) > (keepAlive * 1000)) {
+			if (keepAlive == 0 || (now - evt.getTimestamp()) > (keepAlive * 1000)) {
 				publishs.add(evt.convertFromStored());
 			}
 		}
@@ -158,6 +158,20 @@ public class InflightMessageStoreMapDB implements InflightMessageStore {
 
 	public void setStoreFile(String storeFile) {
 		this.storeFile = storeFile;
+	}
+
+	@Override
+	public List<PublishEvent> retriveDelayedPublishes(int timeout) {
+		LOG.debug(String.format("retriveDelayedPublishes time out [%ds]",  timeout));
+		List<PublishEvent> publishs = new ArrayList<PublishEvent>();
+		long now = System.currentTimeMillis();
+		
+		for (Fun.Tuple2<String, StoredPublishEvent> t : m_inflightOutboundStore.descendingSet()) {
+			if (timeout == 0 || (now - t.b.getTimestamp()) > (timeout * 1000)) {
+				publishs.add(t.b.convertFromStored());
+			}
+		}
+		return publishs;
 	}
 
 }

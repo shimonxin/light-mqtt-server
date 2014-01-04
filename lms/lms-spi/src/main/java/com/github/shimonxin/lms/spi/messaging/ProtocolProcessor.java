@@ -119,13 +119,6 @@ public interface ProtocolProcessor {
 
 	/**
 	 * 
-	 * process ping
-	 * 
-	 * @param clientID
-	 */
-	void processPing(ServerChannel session);
-	/**
-	 * 
 	 * connection lost
 	 * @param clientID
 	 */

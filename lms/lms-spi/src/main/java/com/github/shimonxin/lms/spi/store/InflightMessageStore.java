@@ -81,4 +81,11 @@ public interface InflightMessageStore {
 	 * @return
 	 */
 	List<PublishEvent> retriveDelayedPublishes();
+	/**
+	 * 
+	 * read all delayed publish (QoS 1 2)
+	 * 
+	 * @return
+	 */
+	List<PublishEvent> retriveDelayedPublishes(int timeout);
 }
