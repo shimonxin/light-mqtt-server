@@ -150,7 +150,7 @@ public class InflightMessageStoreMapDB implements InflightMessageStore {
 	public List<PublishEvent> retriveDelayedPublishes() {
 		LOG.debug("retriveAllOutboundPublishes ");
 		List<PublishEvent> publishs = new ArrayList<PublishEvent>();
-		for (Tuple2<String, StoredPublishEvent> t : m_inflightOutboundStore.descendingSet()) {
+		for (Tuple2<String, StoredPublishEvent> t : m_inflightOutboundStore) {
 			publishs.add(t.b.convertFromStored());
 		}
 		return publishs;
