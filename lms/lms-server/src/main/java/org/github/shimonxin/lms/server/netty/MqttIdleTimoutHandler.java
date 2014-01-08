@@ -1,13 +1,16 @@
 package org.github.shimonxin.lms.server.netty;
 
-import com.github.shimonxin.lms.spi.messaging.ProtocolProcessor;
-import com.github.shimonxin.lms.spi.session.ServerChannel;
-
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleState;
 
+import org.apache.log4j.Logger;
+
+import com.github.shimonxin.lms.spi.messaging.ProtocolProcessor;
+import com.github.shimonxin.lms.spi.session.ServerChannel;
+
 class MqttIdleTimoutHandler extends ChannelDuplexHandler {
+	private static Logger logger = Logger.getLogger(MqttIdleTimoutHandler.class);
 	private ProtocolProcessor processor;
 	private ServerChannel session;
 
@@ -22,8 +25,10 @@ class MqttIdleTimoutHandler extends ChannelDuplexHandler {
 			IdleState e = (IdleState) evt;
 			if (e == IdleState.ALL_IDLE) {
 				if (processor == null || session == null) {
+					logger.debug("time out,simply close connection");
 					ctx.close();
 				} else {
+					logger.debug("time out,process disconnect");
 					processor.processDisconnect(session);
 				}
 			}
