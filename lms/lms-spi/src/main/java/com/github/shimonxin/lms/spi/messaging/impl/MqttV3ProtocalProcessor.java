@@ -162,7 +162,7 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 		session.setAttribute(SessionConstants.CLEAN_SESSION, msg.isCleanSession());
 		// used to track the client in the subscription and publishing phases.
 		session.setAttribute(SessionConstants.ATTR_CLIENTID, msg.getClientID());
-		session.setIdleTime(Math.round(keepAlive * 1.5f));
+		session.setIdleTime(Math.round(keepAlive * 1.5f), this);
 		LOG.debug(String.format("Connect as user[%s] with clientID[%s] keepAlive[%ds]", msg.getUsername(), msg.getClientID(), keepAlive));
 
 		subscriptionStore.activate(msg.getClientID());

@@ -7,6 +7,7 @@ import io.netty.util.AttributeKey;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.github.shimonxin.lms.spi.messaging.ProtocolProcessor;
 import com.github.shimonxin.lms.spi.session.ServerChannel;
 import com.github.shimonxin.lms.spi.session.SessionConstants;
 
@@ -51,7 +52,7 @@ public class NettyChannel implements ServerChannel {
 		return m_attributesKeys.get(key);
 	}
 
-	public void setIdleTime(int idleTime) {
+	public void setIdleTime(int idleTime,ProtocolProcessor processor) {
 		if (m_channel.pipeline().names().contains("idleStateHandler")) {
 			m_channel.pipeline().remove("idleStateHandler");
 		}
@@ -59,7 +60,7 @@ public class NettyChannel implements ServerChannel {
 			m_channel.pipeline().remove("idleEventHandler");
 		}
 		m_channel.pipeline().addFirst("idleStateHandler", new IdleStateHandler(0, 0, idleTime));
-		m_channel.pipeline().addAfter("idleStateHandler", "idleEventHandler", new MqttIdleTimoutHandler());
+		m_channel.pipeline().addAfter("idleStateHandler", "idleEventHandler", new MqttIdleTimoutHandler(processor,this));
 	}
 
 	public void close(boolean immediately) {

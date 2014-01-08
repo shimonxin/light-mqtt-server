@@ -48,7 +48,7 @@ public class NettyAcceptor implements ServerAcceptor {
 			public void initChannel(SocketChannel ch) throws Exception {
 				ChannelPipeline pipeline = ch.pipeline();
 				pipeline.addFirst("idleStateHandler", new IdleStateHandler(0, 0, defaultTimeout));
-				pipeline.addAfter("idleStateHandler", "idleEventHandler", new MqttIdleTimoutHandler());
+				pipeline.addAfter("idleStateHandler", "idleEventHandler", new MqttIdleTimoutHandler(null,null));
 				pipeline.addLast("decoder", new MQTTDecoder());
 				pipeline.addLast("encoder", new MQTTEncoder());
 				pipeline.addLast("metrics", new MessageMetricsHandler(m_metricsCollector));

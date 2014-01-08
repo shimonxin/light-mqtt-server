@@ -3,6 +3,8 @@
  */
 package com.github.shimonxin.lms.spi.session;
 
+import com.github.shimonxin.lms.spi.messaging.ProtocolProcessor;
+
 /**
  * ServerChannel
  * @author ShimonXin
@@ -15,7 +17,7 @@ public interface ServerChannel {
     
     void setAttribute(Object key, Object value);
     
-    void setIdleTime(int idleTime);
+    void setIdleTime(int idleTime,ProtocolProcessor processor);
     
     void close(boolean immediately);
     
