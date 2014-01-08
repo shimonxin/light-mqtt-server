@@ -6,7 +6,7 @@
 		<relativePath>../</relativePath>
 		<artifactId>lms</artifactId>
 		<groupId>com.github.shimonxin</groupId>
-		<version>0.1</version>
+		<version>0.2-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>lms-cluster</artifactId>
