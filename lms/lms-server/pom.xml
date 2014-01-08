@@ -23,7 +23,7 @@
 		<dependency>
 			<groupId>com.github.shimonxin</groupId>
 			<artifactId>lms-spi</artifactId>
-			<version>0.1</version>
+			<version>0.2-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.mockito</groupId>
