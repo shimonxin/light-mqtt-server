@@ -401,11 +401,11 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 			// cleanup topic subscriptions
 			processRemoveAllSubscriptions(clientID);
 		} else {
+			// de-activate the subscriptions for this ClientID
+			subscriptionStore.deactivate(clientID);
 			// save inflight messages to persist
 			persistMessageStore.persistedPublishsForFuture(inflightMessageStore.retriveOutboundPublishes(clientID));
 			inflightMessageStore.cleanOutboundPublishes(clientID);
-			// de-activate the subscriptions for this ClientID
-			subscriptionStore.deactivate(clientID);
 		}
 		sessionManger.remove(clientID);
 		session.close(true);		
