@@ -75,6 +75,11 @@ public interface InflightMessageStore {
 	 */
 	List<PublishEvent> retriveOutboundPublishes(String clientID);
 	/**
+	 * clean outbound publishes for client
+	 * @param clientID
+	 */
+	void cleanOutboundPublishes(String clientID);
+	/**
 	 * 
 	 * read all delayed publish (QoS 1 2)
 	 * 

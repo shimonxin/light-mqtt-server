@@ -403,6 +403,7 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 		} else {
 			// save inflight messages to persist
 			persistMessageStore.persistedPublishsForFuture(inflightMessageStore.retriveOutboundPublishes(clientID));
+			inflightMessageStore.cleanOutboundPublishes(clientID);
 			// de-activate the subscriptions for this ClientID
 			subscriptionStore.deactivate(clientID);
 		}

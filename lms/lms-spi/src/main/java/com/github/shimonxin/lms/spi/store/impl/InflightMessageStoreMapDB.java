@@ -142,7 +142,15 @@ public class InflightMessageStoreMapDB implements InflightMessageStore {
 		}
 		return publishs;
 	}
-
+	public void cleanOutboundPublishes(String clientID) {
+		LOG.debug(String.format("retriveOutboundPublishes client[%s] ", clientID));
+		List<Fun.Tuple2<String, StoredPublishEvent>> publishs = new ArrayList<Fun.Tuple2<String, StoredPublishEvent>>();
+		for (StoredPublishEvent evt : Bind.findVals2(m_inflightOutboundStore, clientID)) {
+			publishs.add(Fun.t2(clientID, evt));
+		}
+		m_inflightOutboundStore.removeAll(publishs);
+		db.commit();
+	}
 	/**
 	 * @see com.github.shimonxin.lms.spi.store.InflightMessageStore#retriveDelayedPublishes()
 	 */
