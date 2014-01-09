@@ -3,6 +3,7 @@ package org.github.shimonxin.lms.server.netty;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
 
 import org.apache.log4j.Logger;
 
@@ -21,8 +22,8 @@ class MqttIdleTimoutHandler extends ChannelDuplexHandler {
 
 	@Override
 	public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-		if (evt instanceof IdleState) {
-			IdleState e = (IdleState) evt;
+		if (evt instanceof IdleStateEvent) {
+			IdleState e = ((IdleStateEvent) evt).state();
 			if (e == IdleState.ALL_IDLE) {
 				if (processor == null || session == null) {
 					logger.debug("time out,simply close connection");
