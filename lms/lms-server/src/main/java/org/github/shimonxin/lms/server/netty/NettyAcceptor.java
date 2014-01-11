@@ -72,10 +72,9 @@ public class NettyAcceptor implements ServerAcceptor {
 		if (m_bossGroup == null) {
 			throw new IllegalStateException("Invoked close on an Acceptor that wasn't initialized");
 		}
+		MessageMetrics metrics = m_metricsCollector.computeMetrics();
 		m_workerGroup.shutdownGracefully();
 		m_bossGroup.shutdownGracefully();
-
-		MessageMetrics metrics = m_metricsCollector.computeMetrics();
 		// LOG.info(String.format("Bytes read: %d, bytes wrote: %d", metrics.readBytes(), metrics.wroteBytes()));
 		LOG.info("Msg read: {}, msg wrote: {}", metrics.messagesRead(), metrics.messagesWrote());
 	}
