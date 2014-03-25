@@ -449,6 +449,8 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 			Subscription newSubscription = new Subscription(clientID, req.getTopic(), qos, cleanSession);
 			subscribeSingleTopic(newSubscription, req.getTopic());
 		}
+		// active clientID subscriptions
+		subscriptionStore.activate(clientID);
 		// ack the client
 		SubAckMessage ackMessage = new SubAckMessage();
 		ackMessage.setMessageID(msg.getMessageID());
