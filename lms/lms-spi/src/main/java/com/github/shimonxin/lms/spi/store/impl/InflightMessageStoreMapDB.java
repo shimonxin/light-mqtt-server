@@ -10,7 +10,6 @@ import java.util.NavigableSet;
 import java.util.concurrent.ConcurrentNavigableMap;
 
 import org.mapdb.BTreeKeySerializer;
-import org.mapdb.Bind;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Fun;
@@ -103,7 +102,7 @@ public class InflightMessageStoreMapDB implements InflightMessageStore {
 	@Override
 	public void cleanInFlightOutbound(String clientID, int messageID) {
 		Tuple2<String, StoredPublishEvent> tobeRemoved = null;
-		for (StoredPublishEvent evt : Bind.findVals2(m_inflightOutboundStore, clientID)) {
+		for (StoredPublishEvent evt : Fun.filter(m_inflightOutboundStore, clientID)) {
 			if (evt.getMessageID() == messageID) {
 				tobeRemoved = Fun.t2(clientID, evt);
 			}
@@ -122,7 +121,7 @@ public class InflightMessageStoreMapDB implements InflightMessageStore {
 		LOG.debug(String.format("retriveDelayedPublishes client[%s] keep alive[%ds]", clientID, keepAlive));
 		List<PublishEvent> publishs = new ArrayList<PublishEvent>();
 		long now = System.currentTimeMillis();
-		for (StoredPublishEvent evt : Bind.findVals2(m_inflightOutboundStore, clientID)) {
+		for (StoredPublishEvent evt : Fun.filter(m_inflightOutboundStore, clientID)) {
 			if (keepAlive == 0 || (now - evt.getTimestamp()) > (keepAlive * 1000)) {
 				publishs.add(evt.convertFromStored());
 			}
@@ -137,7 +136,7 @@ public class InflightMessageStoreMapDB implements InflightMessageStore {
 	public List<PublishEvent> retriveOutboundPublishes(String clientID) {
 		LOG.debug(String.format("retriveOutboundPublishes client[%s] ", clientID));
 		List<PublishEvent> publishs = new ArrayList<PublishEvent>();
-		for (StoredPublishEvent evt : Bind.findVals2(m_inflightOutboundStore, clientID)) {
+		for (StoredPublishEvent evt : Fun.filter(m_inflightOutboundStore, clientID)) {
 			publishs.add(evt.convertFromStored());
 		}
 		return publishs;
@@ -145,7 +144,7 @@ public class InflightMessageStoreMapDB implements InflightMessageStore {
 	public void cleanOutboundPublishes(String clientID) {
 		LOG.debug(String.format("retriveOutboundPublishes client[%s] ", clientID));
 		List<Fun.Tuple2<String, StoredPublishEvent>> publishs = new ArrayList<Fun.Tuple2<String, StoredPublishEvent>>();
-		for (StoredPublishEvent evt : Bind.findVals2(m_inflightOutboundStore, clientID)) {
+		for (StoredPublishEvent evt : Fun.filter(m_inflightOutboundStore, clientID)) {
 			publishs.add(Fun.t2(clientID, evt));
 		}
 		m_inflightOutboundStore.removeAll(publishs);

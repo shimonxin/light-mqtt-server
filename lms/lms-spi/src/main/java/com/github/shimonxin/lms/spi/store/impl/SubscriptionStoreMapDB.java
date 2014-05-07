@@ -13,7 +13,6 @@ import java.util.Queue;
 import java.util.concurrent.LinkedBlockingDeque;
 
 import org.mapdb.BTreeKeySerializer;
-import org.mapdb.Bind;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Fun;
@@ -139,7 +138,7 @@ public class SubscriptionStoreMapDB implements SubscriptionStore {
 		subscriptions.removeClientSubscriptions(clientID);
 		// remove from log all subscriptions
 		List<Tuple2<String, Subscription>> subs = new ArrayList<Tuple2<String, Subscription>>();
-		for (Subscription sub : Bind.findVals2(m_persistentSubscriptions, clientID)) {
+		for (Subscription sub : Fun.filter(m_persistentSubscriptions, clientID)) {
 			subs.add(Fun.t2(clientID, sub));
 		}
 		if (!subs.isEmpty()) {

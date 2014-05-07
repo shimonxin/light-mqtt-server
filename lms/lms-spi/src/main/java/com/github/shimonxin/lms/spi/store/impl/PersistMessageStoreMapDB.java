@@ -11,7 +11,6 @@ import java.util.NavigableSet;
 import java.util.Set;
 
 import org.mapdb.BTreeKeySerializer;
-import org.mapdb.Bind;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Fun;
@@ -58,7 +57,7 @@ public class PersistMessageStoreMapDB implements PersistMessageStore {
 	@Override
 	public List<PublishEvent> retrivePersistedPublishes(String clientId) {
 		List<PublishEvent> publishs = new ArrayList<PublishEvent>();
-		for (StoredPublishEvent evt : Bind.findVals2(m_persistentMessageStore, clientId)) {
+		for (StoredPublishEvent evt : Fun.filter(m_persistentMessageStore, clientId)) {
 			publishs.add(evt.convertFromStored());
 		}
 		return publishs;
@@ -67,7 +66,7 @@ public class PersistMessageStoreMapDB implements PersistMessageStore {
 	@Override
 	public void cleanPersistedPublishes(String clientID) {
 		Set<Tuple2<String, StoredPublishEvent>> publishs = new HashSet<Tuple2<String, StoredPublishEvent>>();
-		for (StoredPublishEvent evt : Bind.findVals2(m_persistentMessageStore, clientID)) {
+		for (StoredPublishEvent evt : Fun.filter(m_persistentMessageStore, clientID)) {
 			publishs.add(Fun.t2(clientID, evt));
 		}
 		m_persistentMessageStore.removeAll(publishs);
@@ -77,7 +76,7 @@ public class PersistMessageStoreMapDB implements PersistMessageStore {
 	@Override
 	public void removePersistedPublish(String clientID, int messageID) {
 		StoredPublishEvent eventToRemove = null;
-		for (StoredPublishEvent evt : Bind.findVals2(m_persistentMessageStore, clientID)) {
+		for (StoredPublishEvent evt : Fun.filter(m_persistentMessageStore, clientID)) {
 			if (evt.getMessageID() == messageID) {
 				eventToRemove = evt;
 				break;
