@@ -351,6 +351,7 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 
 	@Override
 	public void processPubAck(String clientID, int messageID) {
+		LOG.debug(String.format("processPubAck invoked for clientID %s ad messageID %d", clientID, messageID));
 		inflightMessageStore.cleanInFlightOutbound(clientID, messageID);
 		persistMessageStore.removePersistedPublish(clientID, messageID);
 	}
@@ -364,6 +365,7 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 	public void processPubRel(ServerChannel session, int messageID) {
 		String clientID = (String) session.getAttribute(SessionConstants.ATTR_CLIENTID);
 		String publishKey = String.format("%s%d", clientID, messageID);
+		LOG.debug(String.format("processPubRel invoked for clientID %s ad messageID %d", clientID, messageID));
 		PublishEvent evt = inflightMessageStore.retriveInFlightInbound(publishKey);
 		if (evt != null) {
 			publish2Subscribers(evt.getTopic(), evt.getQos(), evt.getMessage(), false, evt.getMessageID());
@@ -389,6 +391,7 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 	public void processPubComp(ServerChannel session, int messageID) {
 		// once received the PUBCOMP then remove the message from the temp memory
 		String clientID = (String) session.getAttribute(SessionConstants.ATTR_CLIENTID);
+		LOG.debug(String.format("processPubComp invoked for clientID %s ad messageID %d", clientID, messageID));
 		inflightMessageStore.cleanInFlightOutbound(clientID, messageID);
 		persistMessageStore.removePersistedPublish(clientID, messageID);
 	}
