@@ -15,24 +15,24 @@ class SubAckEncoder extends DemuxEncoder<SubAckMessage> {
 
     @Override
     protected void encode(ChannelHandlerContext chc, SubAckMessage message, ByteBuf out) {
-        if (message.types().isEmpty()) {
+    	if (message.types().isEmpty()) {
             throw new IllegalArgumentException("Found a suback message with empty topics");
         }
 
-        ByteBuf variableHeaderBuff = chc.alloc().buffer(4);
-        variableHeaderBuff.writeShort(message.getMessageID());
-        for (QoS  c : message.types()) {
-            variableHeaderBuff.writeByte(c.ordinal());
+        int variableHeaderSize = 2 + message.types().size();
+        ByteBuf buff = chc.alloc().buffer(6 + variableHeaderSize);
+        try {
+            buff.writeByte(AbstractMessage.SUBACK << 4 );
+            buff.writeBytes(Utils.encodeRemainingLength(variableHeaderSize));
+            buff.writeShort(message.getMessageID());
+            for (QoS c : message.types()) {
+                buff.writeByte(c.ordinal());
+            }
+
+            out.writeBytes(buff);
+        } finally {
+            buff.release();
         }
-
-        int variableHeaderSize = variableHeaderBuff.readableBytes();
-        ByteBuf buff = chc.alloc().buffer(2 + variableHeaderSize);
-
-        buff.writeByte(AbstractMessage.SUBACK << 4 );
-        buff.writeBytes(Utils.encodeRemainingLength(variableHeaderSize));
-        buff.writeBytes(variableHeaderBuff);
-
-        out.writeBytes(buff);
     }
     
 }
