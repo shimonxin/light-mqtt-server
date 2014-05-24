@@ -224,9 +224,9 @@ public class SubscriptionStoreMapDB implements SubscriptionStore {
 				}
 			}
 			// if last token was a SINGLE then treat it as an empty
-			if (subToken == Token.SINGLE && (i - msgTokens.size() == 1)) {
-				i--;
-			}
+//			if (subToken == Token.SINGLE && (i - msgTokens.size() == 1)) {
+//				i--;
+//			}
 			return i == msgTokens.size();
 		} catch (ParseException ex) {
 			LOG.error(null, ex);
@@ -237,44 +237,46 @@ public class SubscriptionStoreMapDB implements SubscriptionStore {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	protected static List<Token> splitTopic(String topic) throws ParseException {
 		List res = new ArrayList<Token>();
-		if (topic == null) {
-			return res;
-		}
-		if ("/".equals(topic)) {
-			res.add(Token.EMPTY);
-			return res;
-		}
-		// ignore first seperator
-		topic = topic.substring(1);
-		String[] splitted = topic.split("/");
+        String[] splitted = topic.split("/");
 
-		if (splitted.length == 0) {
-			res.add(Token.EMPTY);
-		}
+        if (splitted.length == 0) {
+            res.add(Token.EMPTY);
+        }
+        
+        if (topic.endsWith("/")) {
+            //Add a fictious space 
+            String[] newSplitted = new String[splitted.length + 1];
+            System.arraycopy(splitted, 0, newSplitted, 0, splitted.length); 
+            newSplitted[splitted.length] = "";
+            splitted = newSplitted;
+        }
+        
+        for (int i = 0; i < splitted.length; i++) {
+            String s = splitted[i];
+            if (s.isEmpty()) {
+//                if (i != 0) {
+//                    throw new ParseException("Bad format of topic, expetec topic name between separators", i);
+//                }
+                res.add(Token.EMPTY);
+            } else if (s.equals("#")) {
+                //check that multi is the last symbol
+                if (i != splitted.length - 1) {
+                    throw new ParseException("Bad format of topic, the multi symbol (#) has to be the last one after a separator", i);
+                }
+                res.add(Token.MULTI);
+            } else if (s.contains("#")) {
+                throw new ParseException("Bad format of topic, invalid subtopic name: " + s, i);
+            } else if (s.equals("+")) {
+                res.add(Token.SINGLE);
+            } else if (s.contains("+")) {
+                throw new ParseException("Bad format of topic, invalid subtopic name: " + s, i);
+            } else {
+                res.add(new Token(s));
+            }
+        }
 
-		for (int i = 0; i < splitted.length; i++) {
-			String s = splitted[i];
-			if (s.isEmpty()) {
-				throw new ParseException("Bad format of topic, expetec topic name between separators", i);
-			} else if (s.equals("#")) {
-				// check that multi is the last symbol
-				if (i != splitted.length - 1) {
-					throw new ParseException("Bad format of topic, the multi symbol (#) has to be the last one after a separator", i);
-				}
-				res.add(Token.MULTI);
-			} else if (s.contains("#")) {
-				throw new ParseException("Bad format of topic, invalid subtopic name: " + s, i);
-			} else if (s.equals("+")) {
-				res.add(Token.SINGLE);
-			} else if (s.contains("+")) {
-				throw new ParseException("Bad format of topic, invalid subtopic name: " + s, i);
-			} else {
-				res.add(new Token(s));
-			}
-		}
-
-		return res;
-	}
+        return res;
+    }
 
 	public String getStoreFile() {
 		return storeFile;
