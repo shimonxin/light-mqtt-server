@@ -272,10 +272,11 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 	/**
 	 * Flood the subscribers with the message to notify. MessageID is optional and should only used for QoS 1 and 2
 	 * */
-	private void publish2Subscribers(String topic, QoS qos, ByteBuffer message, boolean retain, Integer messageID) {
+	private void publish2Subscribers(String topic, QoS qos, ByteBuffer origMessage, boolean retain, Integer messageID) {
 		LOG.debug("publish2Subscribers republishing to existing subscribers that matches the topic " + topic);
 		for (final Subscription sub : subscriptionStore.searchTopicSubscriptions(topic)) {
 			LOG.debug("found matching subscription on topic " + sub.getTopic());
+			ByteBuffer message = origMessage.duplicate();
 			if (sessionManger.containsClient(sub.getClientId())) {
 				// online
 				if (qos == QoS.MOST_ONE) {
