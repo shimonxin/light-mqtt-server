@@ -275,28 +275,35 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 	private void publish2Subscribers(String topic, QoS qos, ByteBuffer origMessage, boolean retain, Integer messageID) {
 		LOG.debug("publish2Subscribers republishing to existing subscribers that matches the topic " + topic);
 		for (final Subscription sub : subscriptionStore.searchTopicSubscriptions(topic)) {
-			LOG.debug("found matching subscription on topic " + sub.getTopic());
+			LOG.debug("found matching subscription on topic <{}> to <{}> ",sub.getTopic(),sub.getClientId());
 			ByteBuffer message = origMessage.duplicate();
 			if (sessionManger.containsClient(sub.getClientId())) {
 				// online
 				if (qos == QoS.MOST_ONE) {
 					// QoS 0
 					sendPublish(sub.getClientId(), topic, qos, message, false);
-				} else {
-					// QoS 1 or 2 not clean session = false and connected = false => store it
+				} else {					
+					// clone the event with matching clientID
 					PublishEvent newPublishEvt = new PublishEvent(topic, qos, message, retain, sub.getClientId(), messageID, null);
-					if (!sub.isCleanSession() && !sub.isActive()) {
-						// clone the event with matching clientID
-						persistMessageStore.persistedPublishForFuture(newPublishEvt);
-					} else {
+					if(sub.isActive()){
+						LOG.debug("client <{}> is active , send to topic <{}>",sub.getClientId(),sub.getTopic());
 						inflightMessageStore.addInFlightOutbound(newPublishEvt);
 						// publish
 						sendPublish(sub.getClientId(), topic, qos, message, false, messageID, false);
-					}
+					}else{
+						if(sub.isCleanSession()){
+							LOG.debug("client <{}> is deactive , subscription <{}> clean session is true, do nothing.");
+						}else{
+							// QoS 1 or 2 not clean session = false and connected = false => store it
+							LOG.debug("client <{}> is deactive , subscription <{}> clean session is false, store message ",sub.getClientId(),sub.getTopic());
+							persistMessageStore.persistedPublishForFuture(newPublishEvt);
+						}
+					}					
 				}
 			} else {
 				// off line
 				if (qos != QoS.MOST_ONE) {
+					LOG.debug("client <{}> offline, topic <{}>, store message ",sub.getClientId(),sub.getTopic());
 					PublishEvent newPublishEvt = new PublishEvent(topic, qos, message, retain, sub.getClientId(), messageID, null);
 					persistMessageStore.persistedPublishForFuture(newPublishEvt);
 				}
