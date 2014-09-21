@@ -275,35 +275,35 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 	private void publish2Subscribers(String topic, QoS qos, ByteBuffer origMessage, boolean retain, Integer messageID) {
 		LOG.debug("publish2Subscribers republishing to existing subscribers that matches the topic " + topic);
 		for (final Subscription sub : subscriptionStore.searchTopicSubscriptions(topic)) {
-			LOG.debug("found matching subscription on topic <{}> to <{}> ",sub.getTopic(),sub.getClientId());
+			LOG.debug("found matching subscription on topic <{}> to <{}> ", sub.getTopic(), sub.getClientId());
 			ByteBuffer message = origMessage.duplicate();
 			if (sessionManger.containsClient(sub.getClientId())) {
 				// online
 				if (qos == QoS.MOST_ONE) {
 					// QoS 0
 					sendPublish(sub.getClientId(), topic, qos, message, false);
-				} else {					
+				} else {
 					// clone the event with matching clientID
 					PublishEvent newPublishEvt = new PublishEvent(topic, qos, message, retain, sub.getClientId(), messageID, null);
-					if(sub.isActive()){
-						LOG.debug("client <{}> is active , send to topic <{}>",sub.getClientId(),sub.getTopic());
+					if (sub.isActive()) {
+						LOG.debug("client <{}> is active , send to topic <{}>", sub.getClientId(), sub.getTopic());
 						inflightMessageStore.addInFlightOutbound(newPublishEvt);
 						// publish
 						sendPublish(sub.getClientId(), topic, qos, message, false, messageID, false);
-					}else{
-						if(sub.isCleanSession()){
+					} else {
+						if (sub.isCleanSession()) {
 							LOG.debug("client <{}> is deactive , subscription <{}> clean session is true, do nothing.");
-						}else{
+						} else {
 							// QoS 1 or 2 not clean session = false and connected = false => store it
-							LOG.debug("client <{}> is deactive , subscription <{}> clean session is false, store message ",sub.getClientId(),sub.getTopic());
+							LOG.debug("client <{}> is deactive , subscription <{}> clean session is false, store message ", sub.getClientId(), sub.getTopic());
 							persistMessageStore.persistedPublishForFuture(newPublishEvt);
 						}
-					}					
+					}
 				}
 			} else {
 				// off line
 				if (qos != QoS.MOST_ONE) {
-					LOG.debug("client <{}> offline, topic <{}>, store message ",sub.getClientId(),sub.getTopic());
+					LOG.debug("client <{}> offline, topic <{}>, store message ", sub.getClientId(), sub.getTopic());
 					PublishEvent newPublishEvt = new PublishEvent(topic, qos, message, retain, sub.getClientId(), messageID, null);
 					persistMessageStore.persistedPublishForFuture(newPublishEvt);
 				}
@@ -406,34 +406,41 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 
 	@Override
 	public void processDisconnect(ServerChannel session) {
-		boolean cleanSession = (Boolean) session.getAttribute(SessionConstants.CLEAN_SESSION);
-		String clientID = (String) session.getAttribute(SessionConstants.ATTR_CLIENTID);
-		if (cleanSession) {
-			// cleanup topic subscriptions
-			processRemoveAllSubscriptions(clientID);
+		if (session != null) {
+			boolean cleanSession = (Boolean) session.getAttribute(SessionConstants.CLEAN_SESSION);
+			String clientID = (String) session.getAttribute(SessionConstants.ATTR_CLIENTID);
+			if (clientID != null) {
+				if (cleanSession) {
+					// cleanup topic subscriptions
+					processRemoveAllSubscriptions(clientID);
+				} else {
+					// de-activate the subscriptions for this ClientID
+					subscriptionStore.deactivate(clientID);
+					// save inflight messages to persist
+					persistMessageStore.persistedPublishsForFuture(inflightMessageStore.retriveOutboundPublishes(clientID));
+					inflightMessageStore.cleanOutboundPublishes(clientID);
+				}
+				if (sessionManger != null)
+					sessionManger.remove(clientID);
+			}
+			session.close(true);
+			LOG.info("Disconnected client <{}> with clean session {}", clientID, cleanSession);
 		} else {
-			// de-activate the subscriptions for this ClientID
-			subscriptionStore.deactivate(clientID);
-			// save inflight messages to persist
-			persistMessageStore.persistedPublishsForFuture(inflightMessageStore.retriveOutboundPublishes(clientID));
-			inflightMessageStore.cleanOutboundPublishes(clientID);
+			LOG.warn("Disconnected client, but session is null!");
 		}
-		sessionManger.remove(clientID);
-		session.close(true);		
-		LOG.info("Disconnected client <{}> with clean session {}", clientID, cleanSession);
 	}
 
 	public void proccessConnectionLost(ServerChannel channel) {
 		// If already removed a disconnect message was already processed for this clientID
-		 String clientID = (String) channel.getAttribute(SessionConstants.ATTR_CLIENTID);
-		 boolean cleanSession = (Boolean) channel.getAttribute(SessionConstants.CLEAN_SESSION);
-		 SessionDescriptor sessionDescr= sessionManger.get(clientID);
-		 if(sessionDescr!=null){
-			 if(sessionDescr.getSession().equals(channel)){
-				 subscriptionStore.deactivate(clientID);
-			 }
-		 }	
-		 LOG.info("Connection lost client <{}> with clean session {}", clientID, cleanSession);
+		String clientID = (String) channel.getAttribute(SessionConstants.ATTR_CLIENTID);
+		boolean cleanSession = (Boolean) channel.getAttribute(SessionConstants.CLEAN_SESSION);
+		SessionDescriptor sessionDescr = sessionManger.get(clientID);
+		if (sessionDescr != null) {
+			if (sessionDescr.getSession().equals(channel)) {
+				subscriptionStore.deactivate(clientID);
+			}
+		}
+		LOG.info("Connection lost client <{}> with clean session {}", clientID, cleanSession);
 	}
 
 	@Override
