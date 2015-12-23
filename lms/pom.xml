@@ -12,7 +12,7 @@
 		<repository>
 			<id>nexus</id>
 			<name>Team Nexus Release Repository</name>
-			<url>http://10.0.1.100:8888/nexus/content/repositories/xingyun-repo-snapshot</url>
+			<url>http://192.168.1.8:8888/nexus/content/repositories/xingyun-repo-snapshot</url>
 			<uniqueVersion>false</uniqueVersion>
 		</repository>
 	</distributionManagement>
@@ -49,7 +49,7 @@
 				<repository>
 					<id>nexus</id>
 					<name>Team Nexus Release Repository</name>
-					<url>http://172.22.23.226:8888/nexus/content/repositories/xingyun-repo-snapshot</url>
+					<url>http://123.56.120.131:8888/nexus/content/repositories/xingyun-repo-snapshot</url>
 					<uniqueVersion>false</uniqueVersion>
 				</repository>
 			</distributionManagement>
