@@ -1,6 +1,10 @@
 
+This project is closed. Please refer to [my moquette fork] (https://github.com/shimonxin/moquette/)
+=========================
+
 A lightweight MQTT server
 =========================
+
 A lightweight MQTT server that will keep running for the duration of your Android application. 
 
 Use LMAX for message queue.
