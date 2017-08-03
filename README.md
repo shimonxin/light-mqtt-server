@@ -1,5 +1,5 @@
 
-This project is closed. Please refer to [my moquette fork] (https://github.com/shimonxin/moquette/)
+This project is closed. 
 =========================
 
 A lightweight MQTT server
