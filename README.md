@@ -104,7 +104,7 @@ Runtime.getRuntime().addShutdownHook(new Thread() {
 License
 -------
 
-    Copyright 2013 Shimon xin
+    Copyright 2013,2019 Shimon Xin
     
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
