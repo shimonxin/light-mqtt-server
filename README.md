@@ -1,7 +1,3 @@
-
-This project is closed. 
-=========================
-
 A lightweight MQTT server
 =========================
 
