@@ -21,9 +21,9 @@ public class NettyChannel implements ServerChannel {
 
 	private Map<Object, AttributeKey<Object>> m_attributesKeys = new HashMap<Object, AttributeKey<Object>>();
 
-	private static final AttributeKey<Object> ATTR_KEY_KEEPALIVE = new AttributeKey<Object>(SessionConstants.KEEP_ALIVE);
-	private static final AttributeKey<Object> ATTR_KEY_CLEANSESSION = new AttributeKey<Object>(SessionConstants.CLEAN_SESSION);
-	private static final AttributeKey<Object> ATTR_KEY_CLIENTID = new AttributeKey<Object>(SessionConstants.ATTR_CLIENTID);
+	private static final AttributeKey<Object> ATTR_KEY_KEEPALIVE = AttributeKey.valueOf(SessionConstants.KEEP_ALIVE);
+	private static final AttributeKey<Object> ATTR_KEY_CLEANSESSION = AttributeKey.valueOf(SessionConstants.CLEAN_SESSION);
+	private static final AttributeKey<Object> ATTR_KEY_CLIENTID = AttributeKey.valueOf(SessionConstants.ATTR_CLIENTID);
 
 	private long connectedTimestamp;
 
