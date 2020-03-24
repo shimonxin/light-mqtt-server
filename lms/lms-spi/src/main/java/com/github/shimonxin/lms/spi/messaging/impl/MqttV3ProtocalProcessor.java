@@ -433,7 +433,7 @@ public class MqttV3ProtocalProcessor implements ProtocolProcessor, EventHandler<
 	public void proccessConnectionLost(ServerChannel channel) {
 		// If already removed a disconnect message was already processed for this clientID
 		String clientID = (String) channel.getAttribute(SessionConstants.ATTR_CLIENTID);
-		boolean cleanSession = (Boolean) channel.getAttribute(SessionConstants.CLEAN_SESSION);
+		Boolean cleanSession = (Boolean) channel.getAttribute(SessionConstants.CLEAN_SESSION);
 		SessionDescriptor sessionDescr = sessionManger.get(clientID);
 		if (sessionDescr != null) {
 			if (sessionDescr.getSession().equals(channel)) {

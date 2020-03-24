@@ -33,11 +33,22 @@ public class ConnectDecoder extends DemuxDecoder {
             in.resetReaderIndex();
             return;
         }
-        byte[] encProtoName = new byte[6];
-        in.skipBytes(2); //size, is 0x06
-        in.readBytes(encProtoName);
-        String protoName = new String(encProtoName, "UTF-8");
-        if (!"MQIsdp".equals(protoName)) {
+        String protoName =null;
+        in.readByte();
+        int len= in.readByte();
+        if(len == 6) {
+        	 byte[] encProtoName = new byte[6];
+        	 in.readBytes(encProtoName);
+        	 protoName = new String(encProtoName, "UTF-8");
+        }else if (len == 4) {
+        	 byte[] encProtoName = new byte[4];
+        	 in.readBytes(encProtoName);
+        	 protoName = new String(encProtoName, "UTF-8");
+        }else {
+        	throw new CorruptedFrameException("Invalid protoName length: " + len);
+        }       
+        
+        if (!"MQIsdp".equals(protoName)&&!"MQTT".equals(protoName)) {
             in.resetReaderIndex();
             throw new CorruptedFrameException("Invalid protoName: " + protoName);
         }
